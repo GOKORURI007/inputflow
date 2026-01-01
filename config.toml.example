@@ -1,0 +1,32 @@
+# InputFlow Configuration Example
+# Copy this file to config.toml and modify as needed
+
+[network]
+# Role: "server" or "client"
+role = "server"
+# IP address to bind to (server) or connect to (client)
+bind_ip = "0.0.0.0"
+# Port number for communication
+port = 9999
+# TCP nodelay option (not used for UDP but kept for compatibility)
+tcp_nodelay = true
+
+# Topology defines the relationship between screens
+# Each entry represents a screen and its directional neighbors
+[[topology]]
+self_ip = "192.168.1.10"    # This computer's IP
+right = "192.168.1.11"      # Computer to the right
+# left = "192.168.1.9"      # Computer to the left (optional)
+# up = "192.168.1.20"       # Computer above (optional)
+# down = "192.168.1.21"     # Computer below (optional)
+
+# Additional topology entries for other computers in the network
+[[topology]]
+self_ip = "192.168.1.11"
+left = "192.168.1.10"
+
+[shortcuts]
+# Hotkey to toggle lock mode (disable automatic screen switching)
+switch_lock = "ctrl+t"
+# Hotkey to manually cycle between screens
+switch_loop_between_screens = "ctrl+grave"
