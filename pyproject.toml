@@ -1,0 +1,10 @@
+[project]
+name = "inputflow"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.10"
+dependencies = [
+    "pynput>=1.8.1",
+    "evdev>=1.9.2; sys_platform == 'linux'",
+    "loguru>=0.7.3",
+]
