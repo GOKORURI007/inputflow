@@ -1,0 +1,13 @@
+[network]
+role = "client"
+bind_ip = "192.168.123.154"
+port = 9999
+tcp_nodelay = true
+
+[[topology]]
+self_ip = "192.168.123.15"
+left = "192.168.123.154"
+
+[shortcuts]
+switch_lock = "ctrl+t"
+switch_loop_between_screens = "ctrl+grave"

@@ -22,9 +22,12 @@ def cli():
 
 
 @cli.command()
-@click.option("--config", "-c", type=click.Path(), help="Path to configuration file (default: config.toml in current directory)")
-@click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging with detailed debug information")
-@click.option("--log-file", type=click.Path(), help="Write logs to specified file in addition to console output")
+@click.option("--config", "-c", type=click.Path(),
+              help="Path to configuration file (default: config.toml in current directory)")
+@click.option("--verbose", "-v", is_flag=True,
+              help="Enable verbose logging with detailed debug information")
+@click.option("--log-file", type=click.Path(),
+              help="Write logs to specified file in addition to console output")
 def server(config, verbose, log_file):
     """Run as input capture server"""
     # Setup logging based on arguments
@@ -33,7 +36,7 @@ def server(config, verbose, log_file):
         log_file=log_file,
         verbose=verbose
     )
-    
+
     # Validate configuration file path if provided
     if config:
         config_path = Path(config)
@@ -43,7 +46,7 @@ def server(config, verbose, log_file):
         if not config_path.is_file():
             click.echo(f"Error: Configuration path is not a file: {config}", err=True)
             sys.exit(1)
-    
+
     # Run the server
     try:
         from inputflow.server import main as server_main
@@ -61,11 +64,16 @@ def server(config, verbose, log_file):
 
 
 @cli.command()
-@click.option("--config", "-c", type=click.Path(), help="Path to configuration file (default: config.toml in current directory)")
-@click.option("--server", "-s", type=str, help="Server IP address (overrides config file setting)")
-@click.option("--port", "-p", type=int, help="Server port number (overrides config file setting)")
-@click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging with detailed debug information")
-@click.option("--log-file", type=click.Path(), help="Write logs to specified file in addition to console output")
+@click.option("--config", "-c", type=click.Path(),
+              help="Path to configuration file (default: config.toml in current directory)")
+@click.option("--server", "-s", type=str,
+              help="Server IP address (overrides config file setting)")
+@click.option("--port", "-p", type=int,
+              help="Server port number (overrides config file setting)")
+@click.option("--verbose", "-v", is_flag=True,
+              help="Enable verbose logging with detailed debug information")
+@click.option("--log-file", type=click.Path(),
+              help="Write logs to specified file in addition to console output")
 def client(config, server, port, verbose, log_file):
     """Run as input simulation client"""
     # Setup logging based on arguments
@@ -74,7 +82,7 @@ def client(config, server, port, verbose, log_file):
         log_file=log_file,
         verbose=verbose
     )
-    
+
     # Validate configuration file path if provided
     if config:
         config_path = Path(config)
@@ -84,7 +92,7 @@ def client(config, server, port, verbose, log_file):
         if not config_path.is_file():
             click.echo(f"Error: Configuration path is not a file: {config}", err=True)
             sys.exit(1)
-    
+
     # Run the client
     try:
         from inputflow.client import main as client_main
