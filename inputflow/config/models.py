@@ -28,6 +28,10 @@ class HotkeyConfig:
 class CaptureConfig:
     move_throttle_ms: int = 16
 
+@dataclass
+class DisplayConfig:
+    width: int = 1920
+    height: int = 1080
 
 @dataclass
 class Config:
@@ -35,3 +39,4 @@ class Config:
     topology: List[TopologyEntry] = field(default_factory=list)
     shortcuts: HotkeyConfig = field(default_factory=HotkeyConfig)
     capture: CaptureConfig = field(default_factory=CaptureConfig)
+    display: DisplayConfig = field(default_factory=DisplayConfig)
