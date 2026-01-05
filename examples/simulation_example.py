@@ -1,7 +1,10 @@
+"""
+An example script to test the InputSimulation functionality.
+"""
+
 import math
 import sys
 import time
-from pathlib import Path
 
 from inputflow.config.manager import ConfigManager
 from inputflow.core.logging import get_logger
@@ -9,13 +12,9 @@ from inputflow.input.simulation import get_input_simulation
 
 
 def main():
-    """
-    An example script to test the InputSimulation functionality.
-    """
-    project_root = Path(__file__).parent.parent
     logger = get_logger("simulation_example")
     config_manager = ConfigManager()
-    config = config_manager.load_config(str(project_root / "config.example.toml"))
+    config = config_manager.load_config("config.example.toml")
 
     logger.info("Initializing input simulation for this platform...")
     try:

@@ -1,5 +1,8 @@
+"""
+A simple test script for InputCapture.
+"""
+
 import sys
-from pathlib import Path
 
 from inputflow.config.manager import ConfigManager
 from inputflow.core.logging import get_logger
@@ -7,13 +10,9 @@ from inputflow.input.capture import get_input_capture
 
 
 def main():
-    """
-    A simple test script for InputCapture.
-    """
-    project_root = Path(__file__).parent.parent
     logger = get_logger("capture_example")
     config_manager = ConfigManager()
-    config = config_manager.load_config(str(project_root / "config.example.toml"))
+    config = config_manager.load_config("config.example.toml")
 
     logger.info("Initializing input capture for this platform...")
     try:

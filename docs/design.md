@@ -93,7 +93,7 @@ class InputSimulation:
 **Purpose**: Handle UDP-based communication between server and clients.
 
 **Key Features**:
-- Low-latency UDP protocol
+- Low-latency zmq
 - Binary packet serialization for efficiency
 - Configurable IP binding and port settings
 
