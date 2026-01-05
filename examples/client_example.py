@@ -9,13 +9,13 @@ from inputflow.core.logging import get_logger
 from inputflow.network.client import NetworkClient
 
 
-def main():
+def main(ip="127.0.0.1"):
     logger = get_logger("client_example")
     config_manager = ConfigManager()
     config = config_manager.load_config("config.toml.example")
 
     # Assuming the server is on localhost if topology is empty or misconfigured for this example
-    server_ip = "127.0.0.1"
+    server_ip = ip
 
     client = NetworkClient(logger=logger)
 
@@ -42,4 +42,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main(ip="192.168.123.154")

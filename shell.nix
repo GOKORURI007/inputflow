@@ -4,9 +4,9 @@ pkgs.mkShell {
   # 1. 运行时的系统依赖（C 库和头文件）
   buildInputs = with pkgs; [
     libevdev
+    libxkbcommon
+    evtest
     linuxHeaders
-    # 如果你使用 uv，也要加进去
-    uv
   ];
 
   # 2. 告诉 Python 到哪里找内核头文件

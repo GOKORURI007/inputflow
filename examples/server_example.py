@@ -8,51 +8,49 @@ import time
 from inputflow.config.manager import ConfigManager
 from inputflow.core.events import EventType, InputEvent, KeyboardEvent, MouseMoveEvent
 from inputflow.core.logging import get_logger
+from inputflow.input.capture import get_input_capture
 from inputflow.network.server import NetworkServer
 
 
-def main():
+def main(ip="0.0.0.0"):
     logger = get_logger("server_example")
     config_manager = ConfigManager()
     config = config_manager.load_config("config.toml.example")
-
+    config.network.bind_ip = ip
     server = NetworkServer(logger=logger)
+
+    # Event handler for captured input
+    def event_handler(event: InputEvent):
+        server.send_event(event)
+
     try:
         server.bind(config.network.bind_ip, config.network.port)
 
-        logger.info("Server started. Sending dummy events for 15 seconds...")
+        input_capture = get_input_capture(
+            logger=logger, config=config, event_callback=event_handler
+        )
+        input_capture.start_monitoring()
 
-        end_time = time.time() + 15
-        while time.time() < end_time:
-            # Send a mouse move event
-            mouse_event_data = MouseMoveEvent(
-                normalized_x=random.random(),
-                normalized_y=random.random(),
-                timestamp=time.time(),
-            )
-            server.send_event(
-                InputEvent(event_type=EventType.MOUSE_MOVE, data=mouse_event_data)
-            )
+        logger.info("InputFlow server started. Press Ctrl+C to stop.")
 
-            # Send a key press event
-            key_event_data = KeyboardEvent(
-                key_code=random.randint(65, 90),  # Random key 'A'-'Z'
-                pressed=True,
-                timestamp=time.time(),
-            )
-            server.send_event(
-                InputEvent(event_type=EventType.KEYBOARD, data=key_event_data)
-            )
-
+        # Keep the main thread alive while input capture runs in its own threads
+        # You might need a more sophisticated way to keep alive and handle shutdown
+        while True:
             time.sleep(1)
 
-        logger.info("Finished sending events.")
-
+    except KeyboardInterrupt:
+        logger.info("Server stopped by user.")
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.error(f"InputFlow server error: {e}")
     finally:
+        # Check if input_capture was successfully initialized and started
+        if (
+                "input_capture" in locals()
+                and hasattr(input_capture, "_monitoring")
+                and input_capture._monitoring
+        ):
+            input_capture.stop_monitoring()
         server.close()
-        logger.info("Server shut down.")
 
 
 if __name__ == "__main__":
