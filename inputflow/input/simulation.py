@@ -1,10 +1,18 @@
 import abc
 import sys
 import time
+from typing import Optional, Union
 
-from inputflow.core.logging import get_logger
-from inputflow.config.manager import ConfigManager
 from inputflow.config.models import Config
+from inputflow.core.coordinates import CoordinateTransformer
+from inputflow.core.events import (
+    EventType,
+    InputEvent,
+    KeyboardEvent,
+    MouseClickEvent,
+    MouseMoveEvent,
+    MouseScrollEvent,
+)
 
 if sys.platform.startswith("linux"):
     try:
@@ -14,7 +22,7 @@ if sys.platform.startswith("linux"):
 else:
     evdev = None
 
-from pynput import mouse, keyboard
+from pynput import keyboard, mouse
 
 # Shift mappings for typing
 SHIFT_MAP = {
@@ -50,6 +58,10 @@ class InputSimulation(abc.ABC):
     def __init__(self, logger, config: Config):
         self.logger = logger
         self.config = config
+        self.coord_transformer = CoordinateTransformer(
+            screen_width=self.config.display.width,
+            screen_height=self.config.display.height,
+        )
 
     @abc.abstractmethod
     def move_mouse_abs(self, x, y):
@@ -80,6 +92,34 @@ class InputSimulation(abc.ABC):
     def release_key(self, key_str: str):
         """Simulates a key release from a string representation."""
         pass
+
+    def replay_event(self, event: InputEvent):
+        """Replays a received InputEvent."""
+        if event.event_type == EventType.MOUSE_MOVE:
+            data: MouseMoveEvent = event.data
+            abs_x, abs_y = self.coord_transformer.denormalize(
+                data.normalized_x, data.normalized_y
+            )
+            self.move_mouse_abs(abs_x, abs_y)
+        elif event.event_type == EventType.MOUSE_CLICK:
+            data: MouseClickEvent = event.data
+            abs_x, abs_y = self.coord_transformer.denormalize(
+                data.normalized_x, data.normalized_y
+            )
+            # For click, we move to position first, then click.
+            self.move_mouse_abs(abs_x, abs_y)
+            self.click_mouse(data.button, data.pressed)
+        elif event.event_type == EventType.MOUSE_SCROLL:
+            data: MouseScrollEvent = event.data
+            self.scroll_mouse(data.delta_x, data.delta_y)
+        elif event.event_type == EventType.KEYBOARD:
+            data: KeyboardEvent = event.data
+            # KeyboardEvent.key_code can be int (evdev scancode) or str (pynput key name/char)
+            self.press_key(data.key_code) if data.pressed else self.release_key(
+                data.key_code
+            )
+        else:
+            self.logger.warning(f"Unknown event type received: {event.event_type}")
 
     def hotkey(self, *key_strs):
         """Simulates a hotkey combination from string representations."""
@@ -116,11 +156,38 @@ class PynputSimulation(InputSimulation):
         key_map["super"] = key_map.get("super", key_map.get("cmd"))
         return key_map
 
-    def _to_pynput_key(self, key_str: str):
-        key_str = key_str.lower()
+    def _to_pynput_key(
+        self, key_str: Union[int, str]
+    ):  # Accepts int for evdev scancodes
+        if isinstance(
+            key_str, int
+        ):  # If it's an evdev scancode, try to find a pynput equivalent (basic)
+            # This is a simplification; a full mapping table would be needed
+            # For now, it assumes ASCII-like scancodes for alphanumeric and maps directly to char
+            if 97 <= key_str <= 122:
+                return chr(key_str)  # 'a' to 'z'
+            if 48 <= key_str <= 57:
+                return chr(key_str)  # '0' to '9'
+
+            # Need more complex mapping for special keys/modifiers
+            self.logger.warning(
+                f"PynputSimulation: No direct mapping for evdev scancode {key_str}. Ignoring."
+            )
+            return None
+
+        key_str = str(key_str).lower()  # Ensure it's a string
         if len(key_str) == 1:
             return key_str
         return self._key_map.get(key_str)
+
+    def _map_int_to_pynput_button(self, button_int: int):
+        if button_int == 1:
+            return mouse.Button.left
+        if button_int == 2:
+            return mouse.Button.right
+        if button_int == 3:
+            return mouse.Button.middle  # Corrected
+        return None
 
     def move_mouse_abs(self, x, y):
         self._mouse.position = (x, y)
@@ -128,11 +195,19 @@ class PynputSimulation(InputSimulation):
     def move_mouse_rel(self, dx, dy):
         self._mouse.move(dx, dy)
 
-    def click_mouse(self, button, pressed):
-        if pressed:
-            self._mouse.press(button)
+    def click_mouse(self, button: Union[int, object], pressed: bool):
+        pynput_button = (
+            self._map_int_to_pynput_button(button)
+            if isinstance(button, int)
+            else button
+        )
+        if pynput_button:
+            if pressed:
+                self._mouse.press(pynput_button)
+            else:
+                self._mouse.release(pynput_button)
         else:
-            self._mouse.release(button)
+            self.logger.warning(f"PynputSimulation: Unknown mouse button: {button}")
 
     def scroll_mouse(self, dx, dy):
         self._mouse.scroll(dx, dy)
@@ -238,6 +313,31 @@ class UInputSimulation(InputSimulation):
     def _map_str_to_evdev(self, key_str: str):
         return self._key_map.get(key_str.lower())
 
+    # New method to map int (scancode) to evdev keycode
+    def _map_int_to_evdev(self, scancode: int):
+        # This mapping is very basic and might need a full scancode-to-keycode table
+        # For now, it assumes ASCII-like scancodes for alphanumeric and maps directly
+        if 97 <= scancode <= 122:  # 'a' to 'z'
+            return getattr(evdev.ecodes, f"KEY_{chr(scancode).upper()}", None)
+        if 48 <= scancode <= 57:  # '0' to '9'
+            return getattr(evdev.ecodes, f"KEY_{chr(scancode)}", None)
+
+        # For special keys, we'd need a comprehensive lookup table or a more direct approach
+        # This is a placeholder for now
+        self.logger.warning(
+            f"UInputSimulation: No direct mapping for scancode {scancode}. Ignoring."
+        )
+        return None
+
+    def _map_int_to_evdev_button(self, button_int: int):
+        if button_int == 1:
+            return evdev.ecodes.BTN_LEFT
+        if button_int == 2:
+            return evdev.ecodes.BTN_RIGHT
+        if button_int == 3:
+            return evdev.ecodes.BTN_MIDDLE  # Corrected
+        return None
+
     def move_mouse_abs(self, x, y):
         dx = x - self._x
         dy = y - self._y
@@ -250,17 +350,15 @@ class UInputSimulation(InputSimulation):
         self._device.write(evdev.ecodes.EV_REL, evdev.ecodes.REL_Y, dy)
         self._device.syn()
 
-    def click_mouse(self, button, pressed):
-        if button == mouse.Button.left:
-            btn_code = evdev.ecodes.BTN_LEFT
-        elif button == mouse.Button.right:
-            btn_code = evdev.ecodes.BTN_RIGHT
-        elif button == mouse.Button.middle:
-            btn_code = evdev.ecodes.BTN_MIDDLE
+    def click_mouse(self, button: Union[int, object], pressed: bool):
+        btn_code = (
+            self._map_int_to_evdev_button(button) if isinstance(button, int) else None
+        )
+        if btn_code:
+            self._device.write(evdev.ecodes.EV_KEY, btn_code, 1 if pressed else 0)
+            self._device.syn()
         else:
-            return
-        self._device.write(evdev.ecodes.EV_KEY, btn_code, 1 if pressed else 0)
-        self._device.syn()
+            self.logger.warning(f"UInputSimulation: Unknown mouse button: {button}")
 
     def scroll_mouse(self, dx, dy):
         if dy != 0:
@@ -269,21 +367,43 @@ class UInputSimulation(InputSimulation):
             self._device.write(evdev.ecodes.EV_REL, evdev.ecodes.REL_HWHEEL, dx)
         self._device.syn()
 
-    def press_key(self, key_str: str):
-        key_code = self._map_str_to_evdev(key_str)
+    def press_key(
+        self, key: Union[int, str]
+    ):  # Accepts int for evdev scancodes, str for pynput key names/chars
+        key_code: Optional[int] = None
+        if isinstance(key, str):
+            key_code = self._map_str_to_evdev(key)
+        elif isinstance(key, int):
+            key_code = self._map_int_to_evdev(key)  # Map int scancode to evdev keycode
+        else:
+            self.logger.warning(f"UInputSimulation: Unknown key type for press: {key}")
+            return
+
         if key_code is not None:
             self._device.write(evdev.ecodes.EV_KEY, key_code, 1)
             self._device.syn()
         else:
-            self.logger.warning(f"No evdev key found for '{key_str}'")
+            self.logger.warning(f"No evdev key found for '{key}'")
 
-    def release_key(self, key_str: str):
-        key_code = self._map_str_to_evdev(key_str)
+    def release_key(
+        self, key: Union[int, str]
+    ):  # Accepts int for evdev scancodes, str for pynput key names/chars
+        key_code: Optional[int] = None
+        if isinstance(key, str):
+            key_code = self._map_str_to_evdev(key)
+        elif isinstance(key, int):
+            key_code = self._map_int_to_evdev(key)  # Map int scancode to evdev keycode
+        else:
+            self.logger.warning(
+                f"UInputSimulation: Unknown key type for release: {key}"
+            )
+            return
+
         if key_code is not None:
             self._device.write(evdev.ecodes.EV_KEY, key_code, 0)
             self._device.syn()
         else:
-            self.logger.warning(f"No evdev key found for '{key_str}'")
+            self.logger.warning(f"No evdev key found for '{key}'")
 
     def __del__(self):
         if hasattr(self, "_device") and self._device:

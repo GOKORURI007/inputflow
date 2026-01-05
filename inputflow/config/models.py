@@ -7,6 +7,8 @@ class NetworkConfig:
     role: str = "client"  # "server" or "client"
     bind_ip: str = "0.0.0.0"
     port: int = 50007
+    server_ip: Optional[str] = None # IP of the server to connect to in client mode
+
 
 
 @dataclass
