@@ -3,3 +3,4 @@ __pycache__/
 .idea/
 result
 *.egg.info
+*.log

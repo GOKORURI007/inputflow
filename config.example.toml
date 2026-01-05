@@ -1,0 +1,31 @@
+# config.toml.example
+
+[network]
+# Role of this instance: "server" or "client"
+role = "client"
+bind_ip = "0.0.0.0"
+port = 50007
+
+[[topology]]
+self_ip = "192.168.1.100" # IP of this machine for topology
+left = "192.168.1.101"   # IP of the machine to the left
+right = ""             # null if no machine to the right
+up = ""
+down = ""
+
+[[topology]]
+self_ip = "192.168.1.101"
+left = ""
+right = "192.168.1.100"
+up = ""
+down = ""
+
+[shortcuts]
+# Hotkey to switch lock mode (e.g., "ctrl+alt+l")
+switch_lock = "ctrl+alt+l"
+# Hotkey to cycle between screens (e.g., "ctrl+alt+s")
+switch_loop_between_screens = "ctrl+alt+s"
+
+[capture]
+# Mouse move events throttling in milliseconds
+move_throttle_ms = 16

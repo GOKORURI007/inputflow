@@ -4,14 +4,23 @@ import sys
 import time
 from threading import Event, Thread
 
+from inputflow.core.logging import get_logger
+from inputflow.config.manager import ConfigManager
+from inputflow.config.models import Config
+
 
 class InputCapture(abc.ABC):
     """
     An abstract base class for input capturing.
     """
 
-    def __init__(self, move_throttle_ms=16):
-        self._move_throttle_sec = move_throttle_ms / 1000.0
+    def __init__(self, logger, config: Config, move_throttle_ms=16):
+        self.logger = logger
+        self.config = config
+        self._move_throttle_sec = (
+            config.capture.move_throttle_ms / 1000.0 if hasattr(config, 'capture') and hasattr(config.capture, 'move_throttle_ms')
+            else move_throttle_ms / 1000.0
+        )
         self._last_move_time = 0
 
     @abc.abstractmethod
@@ -29,25 +38,23 @@ class InputCapture(abc.ABC):
         if current_time - self._last_move_time < self._move_throttle_sec:
             return
         self._last_move_time = current_time
-        print(f"Mouse moved to ({x}, {y})")
+        self.logger.debug(f"Mouse moved to ({x}, {y})")
 
     def on_mouse_click(self, x, y, button, pressed):
-        print(
-            f"Mouse {'pressed' if pressed else 'released'} button {button} at ({x}, {y})"
-        )
+        self.logger.debug(f"Mouse {'pressed' if pressed else 'released'} button {button} at ({x}, {y})")
 
     def on_mouse_scroll(self, x, y, dx, dy):
-        print(f"Mouse scrolled at ({x}, {y}) with delta ({dx}, {dy})")
+        self.logger.debug(f"Mouse scrolled at ({x}, {y}) with delta ({dx}, {dy})")
 
     def on_key_event(self, key, pressed):
-        print(f"Key {key} {'pressed' if pressed else 'released'}")
+        self.logger.debug(f"Key {key} {'pressed' if pressed else 'released'}")
 
 
 class PynputCapture(InputCapture):
     """Input capture for Windows and macOS using pynput."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, logger, config, **kwargs):
+        super().__init__(logger=logger, config=config, **kwargs)
         from pynput import keyboard, mouse
 
         self._mouse_listener = mouse.Listener(
@@ -71,21 +78,21 @@ class PynputCapture(InputCapture):
             self._mouse_listener.start()
             self._keyboard_listener.start()
             self._monitoring = True
-            print("PynputCapture: Started monitoring.")
+            self.logger.info("PynputCapture: Started monitoring.")
 
     def stop_monitoring(self):
         if self._monitoring:
             self._mouse_listener.stop()
             self._keyboard_listener.stop()
             self._monitoring = False
-            print("PynputCapture: Stopped monitoring.")
+            self.logger.info("PynputCapture: Stopped monitoring.")
 
 
 class EvdevCapture(InputCapture):
     """Input capture for Linux using evdev."""
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, logger, config, **kwargs):
+        super().__init__(logger=logger, config=config, **kwargs)
         import evdev
 
         self.evdev = evdev
@@ -98,7 +105,7 @@ class EvdevCapture(InputCapture):
         try:
             device_paths = self.evdev.list_devices()
         except Exception as e:
-            print(f"EvdevCapture: Could not list devices: {e}")
+            self.logger.error(f"EvdevCapture: Could not list devices: {e}")
             return
 
         for path in device_paths:
@@ -116,18 +123,16 @@ class EvdevCapture(InputCapture):
 
                 if has_keys or has_rel_xy:
                     self._devices.append(device)
-                    print(f"EvdevCapture: Monitoring device: {device.name} at {path}")
+                    self.logger.info(f"EvdevCapture: Monitoring device: {device.name} at {path}")
 
             except (IOError, PermissionError):
-                # This can happen if we don't have read permission.
-                # print(f"EvdevCapture: No permissions to read {path}. Try running as root.")
                 pass # Suppressing output for non-readable devices to avoid spam.
 
         if not self._devices:
-            print("EvdevCapture: No suitable input devices found or permission denied. Try running as root.")
+            self.logger.warning("EvdevCapture: No suitable input devices found or permission denied. Try running as root.")
 
     def _monitor(self):
-        print("EvdevCapture: Monitoring thread started.")
+        self.logger.info("EvdevCapture: Monitoring thread started.")
         fds = {dev.fd: dev for dev in self._devices}
 
         rel_dx, rel_dy = 0, 0
@@ -179,20 +184,20 @@ class EvdevCapture(InputCapture):
                                 self.on_key_event(key_event.keycode, is_pressed)
 
             except Exception as e:
-                print(f"EvdevCapture: Error in monitoring loop: {e}")
+                self.logger.error(f"EvdevCapture: Error in monitoring loop: {e}")
                 break
 
-        print("EvdevCapture: Monitoring thread stopped.")
+        self.logger.info("EvdevCapture: Monitoring thread stopped.")
 
     def start_monitoring(self):
-        print("EvdevCapture: Starting monitoring...")
-        print("NOTE: evdev requires running as root or user in the 'input' group.")
+        self.logger.info("EvdevCapture: Starting monitoring...")
+        self.logger.warning("NOTE: evdev requires running as root or user in the 'input' group.")
 
         # Discover devices in the main thread before starting the monitor thread
         try:
             self._discover_devices()
         except Exception as e:
-            print(f"EvdevCapture: Failed to discover devices: {e}")
+            self.logger.error(f"EvdevCapture: Failed to discover devices: {e}")
             return
 
         if not self._devices:
@@ -203,7 +208,7 @@ class EvdevCapture(InputCapture):
         self._thread.start()
 
     def stop_monitoring(self):
-        print("EvdevCapture: Stopping monitoring...")
+        self.logger.info("EvdevCapture: Stopping monitoring...")
         self._stop_event.set()
         if self._thread:
             self._thread.join()
@@ -213,31 +218,31 @@ class EvdevCapture(InputCapture):
             try:
                 device.close()
             except Exception as e:
-                print(f"EvdevCapture: Error while closing device {device.path}: {e}")
+                self.logger.error(f"EvdevCapture: Error while closing device {device.path}: {e}")
         self._devices = []
 
 
-def get_input_capture(**kwargs) -> InputCapture:
+def get_input_capture(logger, config: Config, **kwargs) -> InputCapture:
     """
     Factory function to get the appropriate input capture implementation
     for the current platform.
     """
     platform = sys.platform
     if platform == "win32" or platform == "darwin":
-        return PynputCapture(**kwargs)
+        return PynputCapture(logger=logger, config=config, **kwargs)
     elif platform.startswith("linux"):
         # evdev is a better choice for linux, especially for Wayland.
         # but pynput also has a linux implementation that can be a fallback.
         try:
             import evdev
 
-            return EvdevCapture(**kwargs)
+            return EvdevCapture(logger=logger, config=config, **kwargs)
         except ImportError:
-            print("evdev library not found, falling back to pynput on Linux.")
-            return PynputCapture(**kwargs)
+            logger.warning("evdev library not found, falling back to pynput on Linux.")
+            return PynputCapture(logger=logger, config=config, **kwargs)
         except Exception as e:
-            print(f"Failed to initialize EvdevCapture: {e}")
-            print("Falling back to pynput on Linux.")
-            return PynputCapture(**kwargs)
+            logger.error(f"Failed to initialize EvdevCapture: {e}")
+            logger.warning("Falling back to pynput on Linux.")
+            return PynputCapture(logger=logger, config=config, **kwargs)
     else:
         raise NotImplementedError(f"Platform {platform} is not supported.")

@@ -2,6 +2,10 @@ import abc
 import sys
 import time
 
+from inputflow.core.logging import get_logger
+from inputflow.config.manager import ConfigManager
+from inputflow.config.models import Config
+
 if sys.platform.startswith("linux"):
     try:
         import evdev
@@ -42,6 +46,10 @@ class InputSimulation(abc.ABC):
     """
     An abstract base class for input simulation.
     """
+
+    def __init__(self, logger, config: Config):
+        self.logger = logger
+        self.config = config
 
     @abc.abstractmethod
     def move_mouse_abs(self, x, y):
@@ -95,7 +103,8 @@ class InputSimulation(abc.ABC):
 class PynputSimulation(InputSimulation):
     """Input simulation for Windows and macOS using pynput."""
 
-    def __init__(self):
+    def __init__(self, logger, config: Config):
+        super().__init__(logger=logger, config=config)
         self._mouse = mouse.Controller()
         self._keyboard = keyboard.Controller()
         self._key_map = self._build_key_map()
@@ -146,8 +155,12 @@ class PynputSimulation(InputSimulation):
 class UInputSimulation(InputSimulation):
     """Input simulation for Linux using evdev.uinput."""
 
-    def __init__(self):
+    def __init__(self, logger, config: Config):
+        super().__init__(logger=logger, config=config)
         if not evdev:
+            self.logger.error(
+                "evdev library is required for UInputSimulation on Linux."
+            )
             raise RuntimeError(
                 "evdev library is required for UInputSimulation on Linux."
             )
@@ -175,9 +188,10 @@ class UInputSimulation(InputSimulation):
         try:
             self._device = evdev.UInput(events=events, name="inputflow-virtual-device")
             self._x, self._y = 0, 0
+            self.logger.info("UInputSimulation: Virtual device created successfully.")
         except Exception as e:
-            print(
-                "Failed to create UInput device. Try running as root.", file=sys.stderr
+            self.logger.error(
+                f"Failed to create UInput device. Try running as root. Error: {e}"
             )
             raise e
 
@@ -261,7 +275,7 @@ class UInputSimulation(InputSimulation):
             self._device.write(evdev.ecodes.EV_KEY, key_code, 1)
             self._device.syn()
         else:
-            print(f"Warning: No evdev key found for '{key_str}'")
+            self.logger.warning(f"No evdev key found for '{key_str}'")
 
     def release_key(self, key_str: str):
         key_code = self._map_str_to_evdev(key_str)
@@ -269,25 +283,28 @@ class UInputSimulation(InputSimulation):
             self._device.write(evdev.ecodes.EV_KEY, key_code, 0)
             self._device.syn()
         else:
-            print(f"Warning: No evdev key found for '{key_str}'")
+            self.logger.warning(f"No evdev key found for '{key_str}'")
 
     def __del__(self):
         if hasattr(self, "_device") and self._device:
             self._device.close()
 
 
-def get_input_simulation() -> InputSimulation:
+def get_input_simulation(logger, config: Config) -> InputSimulation:
     """
     Factory function to get the appropriate input simulation implementation
     for the current platform.
     """
     platform = sys.platform
     if platform in ("win32", "darwin"):
-        return PynputSimulation()
+        return PynputSimulation(logger=logger, config=config)
     elif platform.startswith("linux"):
         if evdev:
-            return UInputSimulation()
+            return UInputSimulation(logger=logger, config=config)
         else:
+            logger.error(
+                "evdev library not found, cannot use UInputSimulation on Linux."
+            )
             raise RuntimeError(
                 "evdev library not found, cannot use UInputSimulation on Linux."
             )

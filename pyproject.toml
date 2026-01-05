@@ -2,7 +2,7 @@
 name = "inputflow"
 version = "0.1.0"
 description = "Cross-platform keyboard and mouse sharing tool"
-requires-python = ">=3.10"
+requires-python = ">=3.13"
 dependencies = [
     "pynput>=1.8.1",
     "evdev>=1.9.2; sys_platform == 'linux'",
