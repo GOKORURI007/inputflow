@@ -17,6 +17,7 @@ from inputflow.core.events import (
 )
 
 
+# TODO 解决鼠标按键和 ctrl 等特殊建的跨平台识别问题
 class InputCapture(abc.ABC):
     """
     An abstract base class for input capturing.
@@ -62,7 +63,7 @@ class InputCapture(abc.ABC):
 
         normalized_x, normalized_y = self.coord_transformer.normalize(x, y)
         event_data = MouseMoveEvent(
-            normalized_x=normalized_x, normalized_y=normalized_y, timestamp=time.time()
+            normalized_x=normalized_x, normalized_y=normalized_y
         )
         self.event_callback(
             InputEvent(event_type=EventType.MOUSE_MOVE, data=event_data)
@@ -91,7 +92,6 @@ class InputCapture(abc.ABC):
             pressed=pressed,
             normalized_x=normalized_x,
             normalized_y=normalized_y,
-            timestamp=time.time(),
         )
         self.event_callback(
             InputEvent(event_type=EventType.MOUSE_CLICK, data=event_data)
@@ -103,7 +103,7 @@ class InputCapture(abc.ABC):
     def on_mouse_scroll(self, x: int, y: int, dx: int, dy: int):
         # Coordinates are usually ignored for scroll events but included for consistency
         normalized_x, normalized_y = self.coord_transformer.normalize(x, y)
-        event_data = MouseScrollEvent(delta_x=dx, delta_y=dy, timestamp=time.time())
+        event_data = MouseScrollEvent(delta_x=dx, delta_y=dy)
         self.event_callback(
             InputEvent(event_type=EventType.MOUSE_SCROLL, data=event_data)
         )
@@ -127,9 +127,7 @@ class InputCapture(abc.ABC):
         else:  # Fallback for unexpected pynput objects or unknown types
             key_repr = str(key)  # Fallback to string representation
 
-        event_data = KeyboardEvent(
-            key_code=key_repr, pressed=pressed, timestamp=time.time()
-        )
+        event_data = KeyboardEvent(key_code=key_repr, pressed=pressed)
         self.event_callback(InputEvent(event_type=EventType.KEYBOARD, data=event_data))
         self.logger.debug(f"Key {key_repr} {'pressed' if pressed else 'released'}")
 
@@ -350,7 +348,10 @@ class EvdevCapture(InputCapture):
 
 
 def get_input_capture(
-    logger, config: Config, event_callback: Callable[[InputEvent], None], **kwargs
+    logger,
+    config: Config,
+    event_callback: Callable[[InputEvent], None] = lambda _: ...,
+    **kwargs,
 ) -> InputCapture:
     """
     Factory function to get the appropriate input capture implementation
@@ -365,8 +366,6 @@ def get_input_capture(
         # evdev is a better choice for linux, especially for Wayland.
         # but pynput also has a linux implementation that can be a fallback.
         try:
-            import evdev
-
             return EvdevCapture(
                 logger=logger, config=config, event_callback=event_callback, **kwargs
             )

@@ -14,7 +14,6 @@ class EventType(Enum):
 class MouseMoveEvent:
     normalized_x: float
     normalized_y: float
-    timestamp: float
 
 
 @dataclass
@@ -23,21 +22,18 @@ class MouseClickEvent:
     pressed: bool
     normalized_x: float
     normalized_y: float
-    timestamp: float
 
 
 @dataclass
 class MouseScrollEvent:
     delta_x: int
     delta_y: int
-    timestamp: float
 
 
 @dataclass
 class KeyboardEvent:
     key_code: int  # Using int for simplicity
     pressed: bool
-    timestamp: float
 
 
 @dataclass
