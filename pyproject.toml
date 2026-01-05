@@ -10,7 +10,7 @@ dependencies = [
     "toml>=0.10.2",
     "click>=8.3.1",
     "zmq>=0.0.0",
-    "xkbcommon>=1.5.1",
+    "xkbcommon>=1.5.1; sys_platform == 'linux'",
 ]
 
 [dependency-groups]

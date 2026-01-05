@@ -6,8 +6,10 @@ from threading import Event, Thread
 from typing import Callable, Union
 
 from pynput.keyboard import Key
+from pynput.mouse import Button
 
 from inputflow.config.models import Config
+from inputflow.core import keymaps
 from inputflow.core.coordinates import CoordinateTransformer
 from inputflow.core.events import (
     EventType,
@@ -74,17 +76,13 @@ class InputCapture(abc.ABC):
             f"Mouse moved to ({x}, {y}) -> Normalized ({normalized_x}, {normalized_y})"
         )
 
-    def on_mouse_click(self, x: int, y: int, button: Union[int, object], pressed: bool):
+    def on_mouse_click(self, x: int, y: int, button: Union[int, Button], pressed: bool):
         normalized_x, normalized_y = self.coord_transformer.normalize(x, y)
 
-        # Convert pynput.mouse.Button to int (value attribute) or evdev button code to int
-        button_int: int
         if isinstance(button, int):  # evdev keycodes are already integers
             button_int = button
-        elif hasattr(
-            button, "value"
-        ):  # pynput.mouse.Button has a value (e.g., 1, 2, 3)
-            button_int = button.value
+        elif hasattr(button, "name"):  # pynput.mouse.Button has a value (e.g., 1, 2, 3)
+            button_int = keymaps.PYNPUT_TO_CODE.get(button.name, 0)
         else:  # Fallback for unexpected types
             button_int = 0  # Indicate unknown button
             self.logger.warning(f"Unknown mouse button type for capture: {button}")
@@ -119,9 +117,7 @@ class InputCapture(abc.ABC):
             hasattr(key, "char") and key.char is not None
         ):  # pynput.keyboard.KeyCode (e.g., 'a', '1', '!')
             key_repr = key.char
-        elif hasattr(
-            key, "name"
-        ):  # pynput.keyboard.Key (e.g., 'alt', 'ctrl', 'super', 'shift')
+        elif hasattr(key, "name"):
             key_repr = key.name
         else:
             key_repr = str(key)
@@ -292,12 +288,14 @@ class EvdevCapture(InputCapture):
                             if any("BTN_" in k for k in keycodes):
                                 # For evdev mouse buttons, map BTN_LEFT to 1, BTN_RIGHT to 2, BTN_MIDDLE to 3 (matching pynput)
                                 button_value = 0
-                                if key_event.scancode == self.evdev.ecodes.BTN_LEFT:
-                                    button_value = 1
-                                elif key_event.scancode == self.evdev.ecodes.BTN_RIGHT:
-                                    button_value = 2
-                                elif key_event.scancode == self.evdev.ecodes.BTN_MIDDLE:
-                                    button_value = 3
+                                if key_event.scancode in [
+                                    self.evdev.ecodes.BTN_LEFT,
+                                    self.evdev.ecodes.BTN_RIGHT,
+                                    self.evdev.ecodes.BTN_MIDDLE,
+                                    self.evdev.ecodes.BTN_FORWARD,
+                                    self.evdev.ecodes.BTN_BACK,
+                                ]:
+                                    button_value = key_event.scancode
                                 self.on_mouse_click(
                                     self._x, self._y, button_value, is_pressed
                                 )
@@ -368,7 +366,7 @@ def get_input_capture(
         # evdev is a better choice for linux, especially for Wayland.
         # but pynput also has a linux implementation that can be a fallback.
         try:
-            return PynputCapture(
+            return EvdevCapture(
                 logger=logger, config=config, event_callback=event_callback, **kwargs
             )
         except ImportError:
