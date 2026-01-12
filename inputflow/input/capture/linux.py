@@ -1,9 +1,6 @@
 import select
 from threading import Event, Thread
-from typing import Callable, Union
-
-from pynput.keyboard import Key
-from pynput.mouse import Button
+from typing import Callable
 
 from inputflow.core.events import EventType, InputEvent, KeyboardEvent, MouseClickEvent
 
@@ -12,7 +9,6 @@ from ...core.keymaps import (
     ecode_to_hid_key,
     hid_to_name_btn,
     hid_to_name_key,
-    name_to_hid_key,
 )
 from .base import InputCapture
 
