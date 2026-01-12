@@ -1,7 +1,8 @@
 import platform
+
 from .base import InputSimulation
-from .windows import PynputSimulation
 from .linux import UInputSimulation
+from .windows import PynputSimulation
 
 __all__ = [InputSimulation, PynputSimulation, UInputSimulation]
 
