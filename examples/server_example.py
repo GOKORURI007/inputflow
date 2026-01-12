@@ -2,13 +2,12 @@
 An example script for the NetworkServer.
 """
 
-import random
 import time
 
 from inputflow.config.manager import ConfigManager
-from inputflow.core.events import EventType, InputEvent, KeyboardEvent, MouseMoveEvent
+from inputflow.core.events import InputEvent
 from inputflow.core.logging import get_logger
-from inputflow.input.capture import get_input_capture
+from inputflow.input.capture.base import get_input_capture
 from inputflow.network.server import NetworkServer
 
 
