@@ -55,6 +55,20 @@ if platform.system() == "Windows" or platform.system() == "Darwin":
         Key.right.value.vk: 0x4F,  # Right Arrow
         Key.down.value.vk: 0x51,  # Down Arrow
         Key.menu.value.vk: 0x76,  # Menu
+        # --- Special Character ---
+        0xBD: 0x2D,  # KEY_MINUS -
+        0xBB: 0x2E,  # KEY_EQUAL =
+        0xDB: 0x2F,  # KEY_LEFTBRACE [
+        0xDD: 0x30,  # KEY_RIGHTBRACE ]
+        0xDC: 0x31,  # KEY_BACKSLASH \
+        0xBA: 0x33,  # KEY_SEMICOLON ;
+        0xDE: 0x34,  # KEY_APOSTROPHE '
+        0xC0: 0x35,  # KEY_GRAVE ~
+        0xBC: 0x36,  # KEY_COMMA ,
+        0xBE: 0x37,  # KEY_DOT .
+        0xBF: 0x38,  # KEY_SLASH /
+        0x14: 0x39,  # KEY_CAPSLOCK
+        0x90: 0x53,  # KEY_NUMLOCK
         # --- NumPad ---
         # Numpad 1-9: VK 0x61-0x69 -> HID 0x59-0x61
         **{vk: (vk - 0x61 + 0x59) for vk in range(0x61, 0x6A)},
@@ -74,6 +88,8 @@ if platform.system() == "Windows" or platform.system() == "Darwin":
         # 1-0 (VK 0x31 - 0x39, 0x30) -> HID 0x1E - 0x27
         **{vk: (vk - 0x31 + 0x1E) for vk in range(0x31, 0x3A)},
         0x30: 0x27,
+        # --- F1~12 ---
+        **{(0x70 + i): (0x3A + i) for i in range(12)},
     }
 
     HID_TO_VK_KEY = {v: k for k, v in VK_TO_HID_KEY.items()}
@@ -122,6 +138,20 @@ else:
         e.KEY_RIGHT: 0x4F,
         e.KEY_DOWN: 0x51,
         e.KEY_COMPOSE: 0x76,  # Menu / App
+        # --- Special Character ---
+        e.KEY_MINUS: 0x2D,
+        e.KEY_EQUAL: 0x2E,
+        e.KEY_LEFTBRACE: 0x2F,
+        e.KEY_RIGHTBRACE: 0x30,
+        e.KEY_BACKSLASH: 0x31,
+        e.KEY_SEMICOLON: 0x33,
+        e.KEY_APOSTROPHE: 0x34,
+        e.KEY_GRAVE: 0x35,
+        e.KEY_COMMA: 0x36,
+        e.KEY_DOT: 0x37,
+        e.KEY_SLASH: 0x38,
+        e.KEY_CAPSLOCK: 0x39,
+        e.KEY_NUMLOCK: 0x53,
         # --- NumPad ---
         e.KEY_KP1: 0x59,
         e.KEY_KP2: 0x5A,
@@ -148,6 +178,8 @@ else:
         # --- Digits (KEY_1=2 -> 0x1E) ---
         **{getattr(e, f"KEY_{i}"): (0x1E + i - 1) for i in range(1, 10)},
         e.KEY_0: 0x27,
+        # --- F1~12 ---
+        **{getattr(e, f"KEY_F{i}"): (0x3A + i - 1) for i in range(1, 13)},
     }
 
     HID_TO_ECODE_KEY = {v: k for k, v in ECODE_TO_HID_KEY.items()}
@@ -193,6 +225,20 @@ NAME_TO_HID_KEY = {
     "KEY_RIGHT": 0x4F,
     "KEY_DOWN": 0x51,
     "KEY_COMPOSE": 0x76,  # Menu / App
+    # --- Special Character ---
+    "KEY_MINUS": 0x2D,
+    "KEY_EQUAL": 0x2E,
+    "KEY_LEFTBRACE": 0x2F,
+    "KEY_RIGHTBRACE": 0x30,
+    "KEY_BACKSLASH": 0x31,
+    "KEY_SEMICOLON": 0x33,
+    "KEY_APOSTROPHE": 0x34,
+    "KEY_GRAVE": 0x35,
+    "KEY_COMMA": 0x36,
+    "KEY_DOT": 0x37,
+    "KEY_SLASH": 0x38,
+    "KEY_CAPSLOCK": 0x39,
+    "KEY_NUMLOCK": 0x53,
     # --- NumPad ---
     "KEY_KP1": 0x59,
     "KEY_KP2": 0x5A,
@@ -216,6 +262,8 @@ NAME_TO_HID_KEY = {
     # --- Digits (KEY_1=2 -> 0x1E) ---
     **{f"KEY_{i}": (0x1E + i - 1) for i in range(1, 10)},
     "KEY_0": 0x27,
+    # --- F1~12 ---
+    **{f"KEY_F{i}": (0x3A + i - 1) for i in range(1, 13)},
 }
 
 HID_TO_NAME_KEY = {v: k for k, v in NAME_TO_HID_KEY.items()}

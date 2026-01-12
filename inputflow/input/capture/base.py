@@ -15,7 +15,6 @@ from inputflow.core.events import (
 )
 
 
-# TODO 解决鼠标按键和 ctrl 等特殊建的跨平台识别问题
 class InputCapture(abc.ABC):
     """
     An abstract base class for input capturing.
