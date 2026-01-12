@@ -73,9 +73,7 @@ class InputSimulation(abc.ABC):
         elif event.event_type == EventType.KEYBOARD:
             data: KeyboardEvent = event.data
             # KeyboardEvent.key_code can be int (evdev scancode) or str (pynput key name/char)
-            self.press_key(data.key_code) if data.pressed else self.release_key(
-                data.key_code
-            )
+            self.click_key(data.key_code, data.pressed)
         else:
             self.logger.warning(f"Unknown event type received: {event.event_type}")
 

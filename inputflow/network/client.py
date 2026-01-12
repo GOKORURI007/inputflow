@@ -3,7 +3,7 @@ from typing import Iterator
 
 import zmq
 
-from inputflow.core.events import InputEvent
+from inputflow.core.events import EventType, InputEvent
 
 
 class NetworkClient:
@@ -35,7 +35,8 @@ class NetworkClient:
             try:
                 serialized_event = self.socket.recv()
                 event = pickle.loads(serialized_event)
-                self.logger.debug(f"Received event: {event}")
+                if event.event_type == EventType.KEYBOARD:
+                    self.logger.debug(f"Received event: {event}")
                 yield event
             except zmq.ZMQError as e:
                 # This can happen on socket close, so we check if it's intentional

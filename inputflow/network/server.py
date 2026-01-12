@@ -2,7 +2,7 @@ import pickle
 
 import zmq
 
-from inputflow.core.events import InputEvent
+from inputflow.core.events import EventType, InputEvent
 
 
 class NetworkServer:
@@ -30,7 +30,8 @@ class NetworkServer:
         try:
             serialized_event = pickle.dumps(event)
             self.socket.send(serialized_event)
-            self.logger.debug(f"Sent event: {event}")
+            if event.event_type == EventType.KEYBOARD:
+                self.logger.debug(f"Sent event: {event}")
         except Exception as e:
             self.logger.error(f"Failed to send event: {e}")
 

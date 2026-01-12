@@ -86,7 +86,7 @@ class PynputCapture(InputCapture):
         else:
             key_value = vk_to_hid_key(key.vk)
 
-        event_data = KeyboardEvent(key_code=vk_to_hid_key(key_value), pressed=pressed)
+        event_data = KeyboardEvent(key_code=key_value, pressed=pressed)
         self.event_callback(InputEvent(event_type=EventType.KEYBOARD, data=event_data))
         self.logger.debug(
             f"Key {str(hid_to_name_key(key_value))}:{key_value} {'pressed' if pressed else 'released'}"
