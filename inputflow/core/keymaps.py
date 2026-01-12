@@ -6,7 +6,7 @@ ECODE_TO_HID_KEY = {}
 HID_TO_ECODE_KEY = {}
 
 if platform.system() == "Windows" or platform.system() == "Darwin":
-    from pynput.keyboard import Key, KeyCode
+    from pynput.keyboard import Key
     from pynput.mouse import Button
 
     VK_TO_HID_BTN = {

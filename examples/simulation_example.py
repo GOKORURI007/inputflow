@@ -7,6 +7,7 @@ import sys
 import time
 
 from inputflow.config.manager import ConfigManager
+from inputflow.core.keymaps import name_to_hid_key
 from inputflow.core.logging import get_logger
 from inputflow.input.simulation import get_input_simulation
 
@@ -28,10 +29,10 @@ def main():
     time.sleep(5)
 
     # 1. Test typing
-    logger.info("Simulating typing 'Hello World!'")
-    simulator.type_text("Hello World!")
+    # logger.info("Simulating typing 'Hello World!'")
+    # simulator.type_text("Hello World!")
 
-    simulator.hotkey("enter")
+    simulator.hotkey(name_to_hid_key("KEY_ENTER"))
     time.sleep(1)
 
     # 2. Test mouse movement (drawing a square)
@@ -52,15 +53,15 @@ def main():
     # 3. Test hotkeys
     logger.info("Simulating a hotkey (Super + q)...")
     logger.info("This might show your desktop or trigger another system shortcut.")
-    simulator.hotkey("super", "q")
+    simulator.hotkey(name_to_hid_key("KEY_LEFTMETA"), name_to_hid_key("KEY_Q"))
     time.sleep(1)
 
     logger.info("Simulating a hotkey (Super + d)...")
-    simulator.hotkey("super", "d")
+    simulator.hotkey(name_to_hid_key("KEY_LEFTMETA"), name_to_hid_key("KEY_D"))
     time.sleep(1)
 
     logger.info("Simulating another hotkey (Ctrl + a)...")
-    simulator.hotkey("ctrl", "a")
+    simulator.hotkey(name_to_hid_key("KEY_LEFTCTRL"), name_to_hid_key("KEY_A"))
     time.sleep(1)
 
     # 4. Test mouse circle (absolute positioning)
