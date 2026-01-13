@@ -1,9 +1,10 @@
 from pynput import keyboard, mouse
 from pynput.keyboard import KeyCode
+from pynput.mouse import Button
 
 from inputflow.config.models import Config
-from inputflow.core.keymaps import hid_to_vk_btn, hid_to_vk_key
 from inputflow.input.simulation.base import InputSimulation
+from inputflow.keymaps import hid_to_vk
 
 
 class PynputSimulation(InputSimulation):
@@ -21,12 +22,12 @@ class PynputSimulation(InputSimulation):
         self._mouse.move(dx, dy)
 
     def click_mouse(self, button: int, pressed: bool):
-        pynput_button = hid_to_vk_btn(button)
+        pynput_button = hid_to_vk(button)
         if pynput_button:
             if pressed:
-                self._mouse.press(pynput_button)
+                self._mouse.press(Button[pynput_button])
             else:
-                self._mouse.release(pynput_button)
+                self._mouse.release(Button[pynput_button])
         else:
             self.logger.warning(f"PynputSimulation: Unknown mouse button: {button}")
 
@@ -34,7 +35,7 @@ class PynputSimulation(InputSimulation):
         self._mouse.scroll(dx, dy)
 
     def click_key(self, key: int, pressed: bool):
-        pynput_key = KeyCode.from_vk(hid_to_vk_key(key))
+        pynput_key = KeyCode.from_vk(hid_to_vk(key))
         if pynput_key:
             if pressed:
                 self._keyboard.press(pynput_key)

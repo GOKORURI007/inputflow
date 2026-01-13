@@ -17,15 +17,17 @@ def get_input_simulation(logger, config: Config) -> InputSimulation:
     if platform.system() in ("Windows", "Darwin"):
         return PynputSimulation(logger=logger, config=config)
     elif platform.system() == "Linux":
-        import evdev
-        if evdev:
-            return UInputSimulation(logger=logger, config=config)
-        else:
+        try:
+            import evdev
+        except ImportError as e:
             logger.error(
                 "evdev library not found, cannot use UInputSimulation on Linux."
             )
             raise RuntimeError(
                 "evdev library not found, cannot use UInputSimulation on Linux."
             )
+
+        return UInputSimulation(logger=logger, config=config)
+
     else:
         raise NotImplementedError(f"Platform {platform} is not supported.")

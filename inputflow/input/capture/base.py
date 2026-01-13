@@ -25,11 +25,13 @@ class InputCapture(abc.ABC):
         logger,
         config: Config,
         event_callback: Callable[[InputEvent], None],
+        hotkey_callback: Callable[[str], None] = None,
         move_throttle_ms=16,
     ):
         self.logger = logger
         self.config = config
         self.event_callback = event_callback
+        self.hotkey_callback = hotkey_callback
         self._move_throttle_sec = (
             config.capture.move_throttle_ms / 1000.0
             if hasattr(config, "capture")

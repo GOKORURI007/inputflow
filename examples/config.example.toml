@@ -21,8 +21,8 @@ up = ""
 down = ""
 
 [shortcuts]
-switch_lock = "ctrl+t"
-switch_loop_between_screens = "ctrl+`"
+switch_lock = "KEY_LEFTCTRL+KEY_LEFTALT+KEY_K"
+switch_loop_between_screens = "KEY_LEFTCTRL+KEY_LEFTALT+KEY_H"
 
 [capture]
 # Mouse move events throttling in milliseconds

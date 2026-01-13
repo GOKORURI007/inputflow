@@ -32,7 +32,7 @@ class ConfigManager:
             logger.error(f"Error loading configuration from {config_path}: {e}")
             raise
 
-        return self._config
+        return self.config
 
     @staticmethod
     def _parse_and_validate(toml_data: dict) -> Config:

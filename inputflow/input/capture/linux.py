@@ -1,34 +1,70 @@
-import select
 from threading import Event, Thread
 from typing import Callable
 
-from inputflow.core.events import EventType, InputEvent, KeyboardEvent, MouseClickEvent
+import select
 
-from ...core.keymaps import (
-    ecode_to_hid_btn,
-    ecode_to_hid_key,
-    hid_to_name_btn,
-    hid_to_name_key,
-)
+from inputflow.core.events import EventType, InputEvent, KeyboardEvent, MouseClickEvent
 from .base import InputCapture
+from ...keymaps import ecode_to_hid, hid_to_ecode, hid_to_name, name_to_hid
 
 
 class EvdevCapture(InputCapture):
     """Input capture for Linux using evdev."""
 
     def __init__(
-        self, logger, config, event_callback: Callable[[InputEvent], None], **kwargs
+        self,
+        logger,
+        config,
+        event_callback: Callable[[InputEvent], None],
+        hotkey_callback: Callable[[str], None] = None,
+        **kwargs,
     ):
         super().__init__(
-            logger=logger, config=config, event_callback=event_callback, **kwargs
+            logger=logger,
+            config=config,
+            event_callback=event_callback,
+            hotkey_callback=hotkey_callback,
+            **kwargs,
         )
-        import evdev
+        try:
+            import evdev
+        except ImportError:
+            logger.error(
+                "evdev library not found, cannot use UInputSimulation on Linux."
+            )
+            raise RuntimeError(
+                "evdev library not found, cannot use UInputSimulation on Linux."
+            )
 
         self.evdev = evdev
         self._stop_event = Event()
         self._thread = None
         self._devices = []
         self._x, self._y = 0, 0  # Internal cursor position
+
+        self._pressed_keys = set()
+        self.hotkey_keys = set()
+        self.hotkey_mod_groups = []
+        self._hotkey_triggered = False
+        if self.hotkey_callback:
+            self._parse_hotkey()
+
+    def _parse_hotkey(self):
+        shortcut_str = self.config.shortcuts.switch_loop_between_screens
+        if not shortcut_str:
+            return
+
+        parts = [key_name.strip() for key_name in shortcut_str.split("+")]
+        for part in parts:
+            key_set = {hid_to_ecode(name_to_hid(part))}
+            if key_set:
+                if any([k in part.lower() for k in ["ctrl", "alt", "shift", "super"]]):
+                    self.hotkey_mod_groups.append(key_set)
+                else:
+                    self.hotkey_keys.update(key_set)
+        self.logger.info(
+            f"Hotkey parsed: mods={self.hotkey_mod_groups}, keys={self.hotkey_keys}"
+        )
 
     def _discover_devices(self):
         try:
@@ -45,11 +81,11 @@ class EvdevCapture(InputCapture):
                 has_keys = self.evdev.ecodes.EV_KEY in capabilities
                 # It's a mouse if it has relative X and Y axes
                 has_rel_xy = (
-                    self.evdev.ecodes.EV_REL in capabilities
-                    and self.evdev.ecodes.REL_X
-                    in capabilities[self.evdev.ecodes.EV_REL]
-                    and self.evdev.ecodes.REL_Y
-                    in capabilities[self.evdev.ecodes.EV_REL]
+                        self.evdev.ecodes.EV_REL in capabilities
+                        and self.evdev.ecodes.REL_X
+                        in capabilities[self.evdev.ecodes.EV_REL]
+                        and self.evdev.ecodes.REL_Y
+                        in capabilities[self.evdev.ecodes.EV_REL]
                 )
 
                 if has_keys or has_rel_xy:
@@ -107,9 +143,33 @@ class EvdevCapture(InputCapture):
                                 scroll_dx += event.value
 
                         elif event.type == self.evdev.ecodes.EV_KEY:
+                            if event.value == 1:  # Key press
+                                self._pressed_keys.add(event.code)
+                            elif event.value == 0:  # Key release
+                                self._pressed_keys.discard(event.code)
+
+                            # Hotkey check
+                            if self.hotkey_callback:
+                                all_mod_groups_pressed = all(
+                                    any(mod in self._pressed_keys for mod in group)
+                                    for group in self.hotkey_mod_groups
+                                )
+                                keys_pressed = self.hotkey_keys.issubset(
+                                    self._pressed_keys
+                                )
+
+                                if all_mod_groups_pressed and keys_pressed:
+                                    if not self._hotkey_triggered:
+                                        self.hotkey_callback(
+                                            "switch_loop_between_screens"
+                                        )
+                                        self._hotkey_triggered = True
+                                else:
+                                    self._hotkey_triggered = False
+
                             key_event = self.evdev.categorize(event)
                             is_pressed = (
-                                event.value == 1
+                                    event.value == 1
                             )  # 1 for press, 0 for release, 2 for repeat
 
                             # Distinguish between mouse buttons and keyboard keys
@@ -171,7 +231,7 @@ class EvdevCapture(InputCapture):
     def on_mouse_click(self, x: int, y: int, button: int, pressed: bool):
         normalized_x, normalized_y = self.coord_transformer.normalize(x, y)
         if isinstance(button, int):  # evdev keycodes are already integers
-            button_value = ecode_to_hid_btn(button)
+            button_value = ecode_to_hid(button)
         else:  # Fallback for unexpected types
             button_value = 0  # Indicate unknown button
             self.logger.warning(f"Unknown mouse button type for capture: {button}")
@@ -186,17 +246,17 @@ class EvdevCapture(InputCapture):
             InputEvent(event_type=EventType.MOUSE_CLICK, data=event_data)
         )
         self.logger.debug(
-            f"Mouse {'pressed' if pressed else 'released'} button {hid_to_name_btn(button_value)}:{button_value} at ({x}, {y})"
+            f"Mouse {'pressed' if pressed else 'released'} button {hid_to_name(button_value)}:{button_value} at ({x}, {y})"
         )
 
     def on_key_event(self, key: int, pressed: bool):
         if isinstance(key, int):
-            key_value = ecode_to_hid_key(key)
+            key_value = ecode_to_hid(key)
         else:
             key_value = 0
 
         event_data = KeyboardEvent(key_code=key_value, pressed=pressed)
         self.event_callback(InputEvent(event_type=EventType.KEYBOARD, data=event_data))
         self.logger.debug(
-            f"Key {hid_to_name_key(key_value)}:{key_value} {'pressed' if pressed else 'released'}"
+            f"Key {hid_to_name(key_value)}:{key_value} {'pressed' if pressed else 'released'}"
         )

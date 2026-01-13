@@ -1,6 +1,8 @@
+from dataclasses import asdict
 from typing import Callable
 
-from pynput.keyboard import Key
+from pynput import keyboard, mouse
+from pynput.keyboard import Key, KeyCode
 from pynput.mouse import Button
 
 from inputflow.core.events import (
@@ -9,26 +11,38 @@ from inputflow.core.events import (
     KeyboardEvent,
     MouseClickEvent,
 )
-from inputflow.core.keymaps import (
-    hid_to_name_btn,
-    hid_to_name_key,
-    vk_to_hid_btn,
-    vk_to_hid_key,
-)
-
 from .base import InputCapture
+from ...keymaps import hid_to_name, hid_to_vk, name_to_hid, vk_to_hid
+
+
+class HotKeyManager(keyboard.GlobalHotKeys):
+    def __init__(self, hotkeys: list[keyboard.HotKey], *args, **kwargs):
+        self._hotkeys = hotkeys
+        super(keyboard.GlobalHotKeys, self).__init__(
+            on_press=self._on_press,
+            on_release=self._on_release,
+            *args,
+            **kwargs)
 
 
 class PynputCapture(InputCapture):
     """Input capture for Windows and macOS using pynput."""
 
     def __init__(
-        self, logger, config, event_callback: Callable[[InputEvent], None], **kwargs
+        self,
+        logger,
+        config,
+        event_callback: Callable[[InputEvent], None],
+        hotkey_callback: Callable[[str], None] = None,
+        **kwargs,
     ):
         super().__init__(
-            logger=logger, config=config, event_callback=event_callback, **kwargs
+            logger=logger,
+            config=config,
+            event_callback=event_callback,
+            hotkey_callback=hotkey_callback,
+            **kwargs,
         )
-        from pynput import keyboard, mouse
 
         def pynput_on_press(key):
             self.on_key_event(key, True)  # Pass key object for conversion in super
@@ -44,12 +58,28 @@ class PynputCapture(InputCapture):
         self._keyboard_listener = keyboard.Listener(
             on_press=pynput_on_press, on_release=pynput_on_release
         )
+
+        self._hotkey_listener = None
+        if self.hotkey_callback:
+            shortcuts = asdict(self.config.shortcuts)
+            hotkeys = [
+                keyboard.HotKey(
+                    [
+                        KeyCode.from_vk(hid_to_vk(name_to_hid(key_name.strip())))
+                        for key_name in v.split('+')
+                    ],
+                    lambda: self.hotkey_callback(k)
+                ) for k, v in shortcuts.items()]
+            self._hotkey_listener = HotKeyManager(hotkeys)
+
         self._monitoring = False
 
     def start_monitoring(self):
         if not self._monitoring:
             self._mouse_listener.start()
             self._keyboard_listener.start()
+            if self._hotkey_listener:
+                self._hotkey_listener.start()
             self._monitoring = True
             self.logger.info("PynputCapture: Started monitoring.")
 
@@ -57,6 +87,8 @@ class PynputCapture(InputCapture):
         if self._monitoring:
             self._mouse_listener.stop()
             self._keyboard_listener.stop()
+            if self._hotkey_listener:
+                self._hotkey_listener.stop()
             self._monitoring = False
             self.logger.info("PynputCapture: Stopped monitoring.")
 
@@ -64,7 +96,7 @@ class PynputCapture(InputCapture):
         normalized_x, normalized_y = self.coord_transformer.normalize(x, y)
         if not isinstance(button, Button):
             self.logger.warning(f"Unknown mouse button type for capture: {button}")
-        button_value = vk_to_hid_btn(button)
+        button_value = vk_to_hid(button.name)
         event_data = MouseClickEvent(
             button=button_value,
             pressed=pressed,
@@ -75,19 +107,19 @@ class PynputCapture(InputCapture):
             InputEvent(event_type=EventType.MOUSE_CLICK, data=event_data)
         )
         self.logger.debug(
-            f"Mouse {'pressed' if pressed else 'released'} button {hid_to_name_btn(button_value)}:{button_value} at ({x}, {y})"
+            f"Mouse {'pressed' if pressed else 'released'} button {hid_to_name(button_value)}:{button_value} at ({x}, {y})"
         )
 
     def on_key_event(self, key: Key, pressed: bool):
         key_value: int
 
         if hasattr(key, "value"):
-            key_value = vk_to_hid_key(key.value.vk)
+            key_value = vk_to_hid(key.value.vk)
         else:
-            key_value = vk_to_hid_key(key.vk)
+            key_value = vk_to_hid(key.vk)
 
         event_data = KeyboardEvent(key_code=key_value, pressed=pressed)
         self.event_callback(InputEvent(event_type=EventType.KEYBOARD, data=event_data))
         self.logger.debug(
-            f"Key {str(hid_to_name_key(key_value))}:{key_value} {'pressed' if pressed else 'released'}"
+            f"Key {str(hid_to_name(key_value))}:{key_value} {'pressed' if pressed else 'released'}"
         )
