@@ -37,6 +37,8 @@ class InputCapture(abc.ABC):
             else move_throttle_ms / 1000.0
         )
         self._last_move_time = 0
+        self._last_x = None
+        self._last_y = None
         self.coord_transformer = CoordinateTransformer(
             screen_width=self.config.display.width,
             screen_height=self.config.display.height,
@@ -66,16 +68,20 @@ class InputCapture(abc.ABC):
             return
         self._last_move_time = current_time
 
+        dx = x - self._last_x if self._last_x is not None else 0
+        dy = y - self._last_y if self._last_y is not None else 0
+        self._last_x, self._last_y = x, y
+
         normalized_x, normalized_y = self.coord_transformer.normalize(x, y)
         event_data = MouseMoveEvent(
-            normalized_x=normalized_x, normalized_y=normalized_y
+            normalized_x=normalized_x, normalized_y=normalized_y, dx=dx, dy=dy
         )
         self.event_callback(
             InputEvent(event_type=EventType.MOUSE_MOVE, data=event_data)
         )
         if log:
             self.logger.debug(
-                f"Mouse moved to ({x}, {y}) -> Normalized ({normalized_x}, {normalized_y})"
+                f"Mouse moved to ({x}, {y}) -> Normalized ({normalized_x}, {normalized_y}), Relative ({dx}, {dy})"
             )
 
     def on_mouse_scroll(self, x: int, y: int, dx: int, dy: int, log: bool = False):

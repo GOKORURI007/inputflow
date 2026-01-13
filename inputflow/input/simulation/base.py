@@ -55,10 +55,13 @@ class InputSimulation(abc.ABC):
         """Replays a received InputEvent."""
         if event.event_type == EventType.MOUSE_MOVE:
             data: MouseMoveEvent = event.data
-            abs_x, abs_y = self.coord_transformer.denormalize(
-                data.normalized_x, data.normalized_y
-            )
-            self.move_mouse_abs(abs_x, abs_y)
+            if data.dx is not None and data.dy is not None:
+                self.move_mouse_rel(data.dx, data.dy)
+            else:
+                abs_x, abs_y = self.coord_transformer.denormalize(
+                    data.normalized_x, data.normalized_y
+                )
+                self.move_mouse_abs(abs_x, abs_y)
         elif event.event_type == EventType.MOUSE_CLICK:
             data: MouseClickEvent = event.data
             abs_x, abs_y = self.coord_transformer.denormalize(

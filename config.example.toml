@@ -21,10 +21,8 @@ up = ""
 down = ""
 
 [shortcuts]
-# Hotkey to switch lock mode (e.g., "ctrl+alt+l")
-switch_lock = "ctrl+alt+l"
-# Hotkey to cycle between screens (e.g., "ctrl+alt+s")
-switch_loop_between_screens = "ctrl+alt+s"
+switch_lock = "ctrl+t"
+switch_loop_between_screens = "ctrl+`"
 
 [capture]
 # Mouse move events throttling in milliseconds

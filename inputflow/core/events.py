@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Union
+from typing import Union, Optional
 
 
 class EventType(Enum):
@@ -14,6 +14,8 @@ class EventType(Enum):
 class MouseMoveEvent:
     normalized_x: float
     normalized_y: float
+    dx: Optional[int] = None
+    dy: Optional[int] = None
 
 
 @dataclass

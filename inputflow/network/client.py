@@ -11,32 +11,35 @@ class NetworkClient:
         self.logger = logger
         self.context = zmq.Context()
         self.socket = self.context.socket(zmq.SUB)
-        # Subscribe to all messages
-        self.socket.setsockopt_string(zmq.SUBSCRIBE, "")
 
-    def connect(self, server_ip: str, port: int):
+    def connect(self, server_ip: str, port: int, client_ip: str):
         """
-        Connects the client to a server.
+        Connects the client to a server and subscribes to a topic.
         """
         connect_address = f"tcp://{server_ip}:{port}"
         try:
             self.socket.connect(connect_address)
-            self.logger.info(f"NetworkClient connected to {connect_address}")
+            self.socket.setsockopt_string(zmq.SUBSCRIBE, client_ip)
+            self.logger.info(
+                f"NetworkClient connected to {connect_address}, subscribed to topic '{client_ip}'"
+            )
         except zmq.ZMQError as e:
             self.logger.error(f"Failed to connect client to {connect_address}: {e}")
             raise
 
     def receive_events(self) -> Iterator[InputEvent]:
         """
-        A generator that receives, deserializes, and yields input events.
+        A generator that receives, deserializes, and yields input events from multipart messages.
         """
         self.logger.info("Starting to receive events...")
         while True:
             try:
-                serialized_event = self.socket.recv()
+                topic, serialized_event = self.socket.recv_multipart()
                 event = pickle.loads(serialized_event)
                 if event.event_type == EventType.KEYBOARD:
-                    self.logger.debug(f"Received event: {event}")
+                    self.logger.debug(
+                        f"Received event on topic {topic.decode()}: {event}"
+                    )
                 yield event
             except zmq.ZMQError as e:
                 # This can happen on socket close, so we check if it's intentional
