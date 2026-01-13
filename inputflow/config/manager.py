@@ -9,7 +9,7 @@ logger = get_logger("config_manager")
 
 class ConfigManager:
     def __init__(self):
-        self._config: Config = Config()  # Default config
+        self.config: Config = Config()  # Default config
 
     def load_config(self, config_path: str) -> Config:
         config_file_path = Path(config_path)
@@ -17,13 +17,13 @@ class ConfigManager:
             logger.warning(
                 f"Config file not found at {config_path}. Using default configuration."
             )
-            return self._config
+            return self.config
 
         try:
             with open(config_file_path, "rb") as f:
                 toml_config = tomllib.load(f)
 
-            self._config = self._parse_and_validate(toml_config)
+            self.config = self._parse_and_validate(toml_config)
             logger.info(f"Configuration loaded successfully from {config_path}.")
         except tomllib.TOMLDecodeError as e:
             logger.error(f"Error decoding TOML config file {config_path}: {e}")
@@ -34,7 +34,8 @@ class ConfigManager:
 
         return self._config
 
-    def _parse_and_validate(self, toml_data: dict) -> Config:
+    @staticmethod
+    def _parse_and_validate(toml_data: dict) -> Config:
         # Parse NetworkConfig
         network_data = toml_data.get("network", {})
         network_config = NetworkConfig(**network_data)
@@ -52,7 +53,3 @@ class ConfigManager:
         return Config(
             network=network_config, topology=topology_config, shortcuts=shortcuts_config
         )
-
-    @property
-    def config(self) -> Config:
-        return self._config

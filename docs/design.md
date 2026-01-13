@@ -65,10 +65,10 @@ graph TB
 class InputCapture:
     def start_monitoring(self) -> None
     def stop_monitoring(self) -> None
+    def on_key_event(self, key: int | Key, pressed: bool) -> None
+    def on_mouse_click(self, button: int | Button, pressed: bool) -> None
     def on_mouse_move(self, x: int, y: int) -> None
-    def on_mouse_click(self, button: MouseButton, pressed: bool) -> None
     def on_mouse_scroll(self, dx: int, dy: int) -> None
-    def on_key_event(self, key: Key, pressed: bool) -> None
 ```
 
 ### 2. Input Simulation Layer
@@ -82,10 +82,13 @@ class InputCapture:
 **Interface**:
 ```python
 class InputSimulation:
-    def move_mouse(self, x: int, y: int) -> None
-    def click_mouse(self, button: MouseButton, pressed: bool) -> None
+    def move_mouse_abs(self, x: int, y: int) -> None
+    def move_mouse_rel(self, dx: int, dy: int) -> None
+    def click_mouse(self, button: int | Button, pressed: bool) -> None
     def scroll_mouse(self, dx: int, dy: int) -> None
-    def press_key(self, key: Key, pressed: bool) -> None
+    def click_key(self, key: int | Key, pressed: bool) -> None
+    def replay_event(self, event: InputEvent) -> None
+    def hotkey(self, *key_strs:str):
 ```
 
 ### 3. Network Communication Layer
@@ -122,8 +125,8 @@ class NetworkClient:
 **Interface**:
 ```python
 class CoordinateTransformer:
-    def normalize_coordinates(self, x: int, y: int, screen_width: int, screen_height: int) -> Tuple[float, float]
-    def denormalize_coordinates(self, norm_x: float, norm_y: float, screen_width: int, screen_height: int) -> Tuple[int, int]
+    def normalize(self, x: int, y: int) -> Tuple[float, float]
+    def denormalize(self, norm_x: float, norm_y: float) -> Tuple[int, int]
     def get_screen_dimensions(self) -> Tuple[int, int]
 ```
 
@@ -152,11 +155,8 @@ class TopologyManager:
 **Interface**:
 ```python
 class ConfigManager:
-    def load_config(self, path: str) -> Config
-    def validate_config(self, config: Config) -> bool
-    def get_network_config(self) -> NetworkConfig
-    def get_topology_config(self) -> TopologyConfig
-    def get_hotkey_config(self) -> HotkeyConfig
+    def load_config(self, config_path: str) -> Config
+    def _parse_and_validate(self, toml_data: dict) -> Config
 ```
 
 ### 7. Hotkey Controller
@@ -181,32 +181,28 @@ class HotkeyController:
 class MouseMoveEvent:
     normalized_x: float
     normalized_y: float
-    timestamp: float
 
 @dataclass
 class MouseClickEvent:
-    button: MouseButton
+    button: int | Button
     pressed: bool
     normalized_x: float
     normalized_y: float
-    timestamp: float
 
 @dataclass
 class MouseScrollEvent:
     delta_x: int
     delta_y: int
-    timestamp: float
 
 @dataclass
 class KeyboardEvent:
-    key_code: int
+    key_code: int | Key
     pressed: bool
-    timestamp: float
 
 @dataclass
 class InputEvent:
     event_type: EventType
-    data: Union[MouseMoveEvent, MouseClickEvent, MouseScrollEvent, KeyboardEvent]
+    data: MouseMoveEvent | MouseClickEvent | MouseScrollEvent | KeyboardEvent
 ```
 
 ### Configuration Data Structures

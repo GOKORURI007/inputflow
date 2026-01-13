@@ -8,8 +8,9 @@ between server and client components.
 
 import time
 
-from inputflow.core.events import InputEvent, MouseButton
-from inputflow.network import NetworkClient, NetworkServer
+from inputflow.core.events import InputEvent, MouseClickEvent
+from inputflow.network.client import NetworkClient
+from inputflow.network.server import NetworkServer
 
 
 def demo_server_client():
@@ -74,7 +75,7 @@ def demo_server_client():
     time.sleep(0.5)
     
     # Show results
-    print(f"\n6. Results:")
+    print("\n6. Results:")
     print(f"   Events sent: {len(test_events)}")
     print(f"   Events received: {len(received_events)}")
     
@@ -116,7 +117,7 @@ def demo_binary_vs_json():
     
     # Show size difference
     size_reduction = (len(json_data) - len(binary_data)) / len(json_data) * 100
-    print(f"\n3. Comparison:")
+    print("\n3. Comparison:")
     print(f"   Binary format is {size_reduction:.1f}% smaller")
     print(f"   Space saved: {len(json_data) - len(binary_data)} bytes")
     
@@ -141,7 +142,7 @@ def demo_binary_vs_json():
     json_error_x = abs(json_event.data.normalized_x - event.data.normalized_x)
     json_error_y = abs(json_event.data.normalized_y - event.data.normalized_y)
     
-    print(f"\n5. Precision comparison:")
+    print("\n5. Precision comparison:")
     print(f"   Binary error: x={binary_error_x:.2e}, y={binary_error_y:.2e}")
     print(f"   JSON error:   x={json_error_x:.2e}, y={json_error_y:.2e}")
     

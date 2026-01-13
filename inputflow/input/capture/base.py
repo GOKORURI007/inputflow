@@ -53,11 +53,11 @@ class InputCapture(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def on_key_event(self, key: Union[str, Key], pressed: bool):
+    def on_key_event(self, key: int | Key, pressed: bool):
         pass
 
     @abc.abstractmethod
-    def on_mouse_click(self, x: int, y: int, button: Union[int, Button], pressed: bool):
+    def on_mouse_click(self, x: int, y: int, button: int | Button, pressed: bool):
         pass
 
     def on_mouse_move(self, x: int, y: int, log: bool = False):
