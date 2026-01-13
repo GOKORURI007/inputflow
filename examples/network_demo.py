@@ -8,7 +8,7 @@ between server and client components.
 
 import time
 
-from inputflow.core.events import InputEvent, MouseClickEvent
+from inputflow.core.events import InputEvent
 from inputflow.network.client import NetworkClient
 from inputflow.network.server import NetworkServer
 

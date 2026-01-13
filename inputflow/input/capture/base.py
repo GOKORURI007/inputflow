@@ -1,6 +1,6 @@
 import abc
 import time
-from typing import Callable, Union
+from typing import Callable
 
 from pynput.keyboard import Key
 from pynput.mouse import Button
