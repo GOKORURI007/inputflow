@@ -50,6 +50,9 @@ def main():
         logger.info("Client shutting down.")
     finally:
         client.close()
+        # Wait a bit for the thread to finish, but don't wait indefinitely
+        receiver_thread.join(timeout=2.0)  # Wait up to 2 seconds for thread to finish
+        logger.info("Client completely shut down.")
 
 
 if __name__ == "__main__":

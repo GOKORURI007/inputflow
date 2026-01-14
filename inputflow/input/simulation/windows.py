@@ -29,7 +29,7 @@ class PynputSimulation(InputSimulation):
             else:
                 self._mouse.release(Button[pynput_button])
         else:
-            self.logger.warning(f"PynputSimulation: Unknown mouse button: {button}")
+            self.logger.warning(f'PynputSimulation: Unknown mouse button: {button}')
 
     def scroll_mouse(self, dx, dy):
         self._mouse.scroll(dx, dy)
@@ -42,4 +42,4 @@ class PynputSimulation(InputSimulation):
             else:
                 self._keyboard.release(pynput_key)
         else:
-            self.logger.warning(f"PynputSimulation: Unknown key: {key}")
+            self.logger.warning(f'PynputSimulation: Unknown key: {key}')

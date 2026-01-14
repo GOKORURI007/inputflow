@@ -85,25 +85,22 @@ if evdev:
         e.KEY_KPENTER: 0x58,
         # --- Alphabet (KEY_A=30 -> 0x04) ---
         # Linux evdev 的字母分布不像 VK 那样连续，建议显式映射或使用 e.KEY_A 引用
-        **{
-            getattr(e, f"KEY_{c}"): (ord(c) - ord("A") + 0x04)
-            for c in "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        },
+        **{getattr(e, f'KEY_{c}'): (ord(c) - ord('A') + 0x04) for c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'},
         # --- Digits (KEY_1=2 -> 0x1E) ---
-        **{getattr(e, f"KEY_{i}"): (0x1E + i - 1) for i in range(1, 10)},
+        **{getattr(e, f'KEY_{i}'): (0x1E + i - 1) for i in range(1, 10)},
         e.KEY_0: 0x27,
         # --- F1~12 ---
-        **{getattr(e, f"KEY_F{i}"): (0x3A + i - 1) for i in range(1, 13)},
+        **{getattr(e, f'KEY_F{i}'): (0x3A + i - 1) for i in range(1, 13)},
     }
 
 VK_TO_HID_BTN = {
     # --- Mouse ---
-    "left": 0x01,  # left btn
-    "right": 0x02,  # right btn
-    "middle": 0x03,  # middle btn
+    'left': 0x01,  # left btn
+    'right': 0x02,  # right btn
+    'middle': 0x03,  # middle btn
     # custom
-    "x1": 0x04,  # x1 btn
-    "x2": 0x05,  # x2 btn
+    'x1': 0x04,  # x1 btn
+    'x2': 0x05,  # x2 btn
 }
 
 VK_TO_HID_KEY = {

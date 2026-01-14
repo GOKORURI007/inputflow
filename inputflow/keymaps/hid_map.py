@@ -124,4 +124,4 @@ def name_to_hid(name: str) -> int:
 
 
 def hid_to_name(hid_id: int) -> str:
-    return HID_TO_NAME.get(hid_id, "UNKNOWN")
+    return HID_TO_NAME.get(hid_id, 'UNKNOWN')

@@ -11,8 +11,9 @@ from inputflow.core.events import (
     KeyboardEvent,
     MouseClickEvent,
 )
-from .base import InputCapture
+
 from ...keymaps import hid_to_name, hid_to_vk, name_to_hid, vk_to_hid
+from .base import InputCapture
 
 
 class HotKeyManager(keyboard.GlobalHotKeys):
@@ -139,6 +140,4 @@ class PynputCapture(InputCapture):
 
         event_data = KeyboardEvent(key_code=key_value, pressed=pressed)
         self.event_callback(InputEvent(event_type=EventType.KEYBOARD, data=event_data))
-        self.logger.debug(
-            f"Key {str(hid_to_name(key_value))}:{key_value} {'pressed' if pressed else 'released'}"
-        )
+        self.logger.debug(f'Key {str(hid_to_name(key_value))}:{key_value} {"pressed" if pressed else "released"}')

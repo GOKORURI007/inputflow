@@ -4,7 +4,7 @@ from typing import Tuple
 class CoordinateTransformer:
     def __init__(self, screen_width: int, screen_height: int):
         if screen_width <= 0 or screen_height <= 0:
-            raise ValueError("Screen dimensions must be positive")
+            raise ValueError('Screen dimensions must be positive')
         self.screen_width = screen_width
         self.screen_height = screen_height
 

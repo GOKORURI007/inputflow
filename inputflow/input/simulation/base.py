@@ -58,15 +58,11 @@ class InputSimulation(abc.ABC):
             if data.dx is not None and data.dy is not None:
                 self.move_mouse_rel(data.dx, data.dy)
             else:
-                abs_x, abs_y = self.coord_transformer.denormalize(
-                    data.normalized_x, data.normalized_y
-                )
+                abs_x, abs_y = self.coord_transformer.denormalize(data.normalized_x, data.normalized_y)
                 self.move_mouse_abs(abs_x, abs_y)
         elif event.event_type == EventType.MOUSE_CLICK:
             data: MouseClickEvent = event.data
-            abs_x, abs_y = self.coord_transformer.denormalize(
-                data.normalized_x, data.normalized_y
-            )
+            abs_x, abs_y = self.coord_transformer.denormalize(data.normalized_x, data.normalized_y)
             # For click, we move to position first, then click.
             self.move_mouse_abs(abs_x, abs_y)
             self.click_mouse(data.button, data.pressed)
@@ -78,7 +74,7 @@ class InputSimulation(abc.ABC):
             # KeyboardEvent.key_code can be int (evdev scancode) or str (pynput key name/char)
             self.click_key(data.key_code, data.pressed)
         else:
-            self.logger.warning(f"Unknown event type received: {event.event_type}")
+            self.logger.warning(f'Unknown event type received: {event.event_type}')
 
     def hotkey(self, *key_strs):
         """Simulates a hotkey combination from string representations."""

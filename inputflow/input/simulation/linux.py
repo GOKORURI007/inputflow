@@ -12,12 +12,8 @@ class UInputSimulation(InputSimulation):
         try:
             import evdev
         except ImportError:
-            logger.error(
-                "evdev library not found, cannot use UInputSimulation on Linux."
-            )
-            raise RuntimeError(
-                "evdev library not found, cannot use UInputSimulation on Linux."
-            )
+            logger.error('evdev library not found, cannot use UInputSimulation on Linux.')
+            raise RuntimeError('evdev library not found, cannot use UInputSimulation on Linux.')
 
         self.evdev = evdev
         self._build_key_map()
@@ -41,13 +37,11 @@ class UInputSimulation(InputSimulation):
         }
 
         try:
-            self._device = evdev.UInput(events=events, name="inputflow-virtual-device")
+            self._device = evdev.UInput(events=events, name='inputflow-virtual-device')
             self._x, self._y = 0, 0
-            self.logger.info("UInputSimulation: Virtual device created successfully.")
+            self.logger.info('UInputSimulation: Virtual device created successfully.')
         except Exception as e:
-            self.logger.error(
-                f"Failed to create UInput device. Try running as root. Error: {e}"
-            )
+            self.logger.error(f'Failed to create UInput device. Try running as root. Error: {e}')
             raise e
 
     def move_mouse_abs(self, x, y):
@@ -71,7 +65,7 @@ class UInputSimulation(InputSimulation):
             self._device.write(self.evdev.ecodes.EV_KEY, btn_code, 1 if pressed else 0)
             self._device.syn()
         else:
-            self.logger.warning(f"UInputSimulation: Unknown mouse button: {button}")
+            self.logger.warning(f'UInputSimulation: Unknown mouse button: {button}')
 
     def scroll_mouse(self, dx, dy):
         if dy != 0:
@@ -89,5 +83,5 @@ class UInputSimulation(InputSimulation):
             self.logger.warning(f"No evdev key found for '{key}'")
 
     def __del__(self):
-        if hasattr(self, "_device") and self._device:
+        if hasattr(self, '_device') and self._device:
             self._device.close()

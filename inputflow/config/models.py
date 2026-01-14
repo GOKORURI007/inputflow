@@ -4,16 +4,15 @@ from typing import List, Optional
 
 @dataclass
 class NetworkConfig:
-    role: str = "client"  # "server" or "client"
-    bind_ip: str = "0.0.0.0"
+    role: str = 'client'  # "server" or "client"
+    bind_ip: str = '0.0.0.0'
     port: int = 50007
-    server_ip: Optional[str] = None # IP of the server to connect to in client mode
-
+    server_ip: Optional[str] = None  # IP of the server to connect to in client mode
 
 
 @dataclass
 class TopologyEntry:
-    self_ip: str = "127.0.0.1"
+    self_ip: str = '127.0.0.1'
     left: Optional[str] = None
     right: Optional[str] = None
     up: Optional[str] = None
@@ -22,18 +21,20 @@ class TopologyEntry:
 
 @dataclass
 class HotkeyConfig:
-    switch_lock: str = "ctrl+alt+l"
-    switch_loop_between_screens: str = "ctrl+alt+s"
+    switch_lock: str = 'ctrl+alt+l'
+    switch_loop_between_screens: str = 'ctrl+alt+s'
 
 
 @dataclass
 class CaptureConfig:
     move_throttle_ms: int = 16
 
+
 @dataclass
 class DisplayConfig:
     width: int = 1920
     height: int = 1080
+
 
 @dataclass
 class Config:

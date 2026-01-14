@@ -29,12 +29,8 @@ class EvdevCapture(InputCapture):
         try:
             import evdev
         except ImportError:
-            logger.error(
-                "evdev library not found, cannot use UInputSimulation on Linux."
-            )
-            raise RuntimeError(
-                "evdev library not found, cannot use UInputSimulation on Linux."
-            )
+            logger.error('evdev library not found, cannot use UInputSimulation on Linux.')
+            raise RuntimeError('evdev library not found, cannot use UInputSimulation on Linux.')
 
         self.evdev = evdev
         self._stop_event = Event()
@@ -54,23 +50,21 @@ class EvdevCapture(InputCapture):
         if not shortcut_str:
             return
 
-        parts = [key_name.strip() for key_name in shortcut_str.split("+")]
+        parts = [key_name.strip() for key_name in shortcut_str.split('+')]
         for part in parts:
             key_set = {hid_to_ecode(name_to_hid(part))}
             if key_set:
-                if any([k in part.lower() for k in ["ctrl", "alt", "shift", "super"]]):
+                if any([k in part.lower() for k in ['ctrl', 'alt', 'shift', 'super']]):
                     self.hotkey_mod_groups.append(key_set)
                 else:
                     self.hotkey_keys.update(key_set)
-        self.logger.info(
-            f"Hotkey parsed: mods={self.hotkey_mod_groups}, keys={self.hotkey_keys}"
-        )
+        self.logger.info(f'Hotkey parsed: mods={self.hotkey_mod_groups}, keys={self.hotkey_keys}')
 
     def _discover_devices(self):
         try:
             device_paths = self.evdev.list_devices()
         except Exception as e:
-            self.logger.error(f"EvdevCapture: Could not list devices: {e}")
+            self.logger.error(f'EvdevCapture: Could not list devices: {e}')
             return
 
         for path in device_paths:
@@ -81,29 +75,25 @@ class EvdevCapture(InputCapture):
                 has_keys = self.evdev.ecodes.EV_KEY in capabilities
                 # It's a mouse if it has relative X and Y axes
                 has_rel_xy = (
-                        self.evdev.ecodes.EV_REL in capabilities
-                        and self.evdev.ecodes.REL_X
-                        in capabilities[self.evdev.ecodes.EV_REL]
-                        and self.evdev.ecodes.REL_Y
-                        in capabilities[self.evdev.ecodes.EV_REL]
+                    self.evdev.ecodes.EV_REL in capabilities
+                    and self.evdev.ecodes.REL_X in capabilities[self.evdev.ecodes.EV_REL]
+                    and self.evdev.ecodes.REL_Y in capabilities[self.evdev.ecodes.EV_REL]
                 )
 
                 if has_keys or has_rel_xy:
                     self._devices.append(device)
-                    self.logger.info(
-                        f"EvdevCapture: Monitoring device: {device.name} at {path}"
-                    )
+                    self.logger.info(f'EvdevCapture: Monitoring device: {device.name} at {path}')
 
             except (IOError, PermissionError):
                 pass  # Suppressing output for non-readable devices to avoid spam.
 
         if not self._devices:
             self.logger.warning(
-                "EvdevCapture: No suitable input devices found or permission denied. Try running as root."
+                'EvdevCapture: No suitable input devices found or permission denied. Try running as root.'
             )
 
     def _monitor(self):
-        self.logger.info("EvdevCapture: Monitoring thread started.")
+        self.logger.info('EvdevCapture: Monitoring thread started.')
         fds = {dev.fd: dev for dev in self._devices}
 
         rel_dx, rel_dy = 0, 0
@@ -127,9 +117,7 @@ class EvdevCapture(InputCapture):
                                 rel_dx, rel_dy = 0, 0
                             if scroll_dx != 0 or scroll_dy != 0:
                                 # Coordinates for scroll are not usually passed, use current mouse position
-                                self.on_mouse_scroll(
-                                    self._x, self._y, scroll_dx, scroll_dy
-                                )
+                                self.on_mouse_scroll(self._x, self._y, scroll_dx, scroll_dy)
                                 scroll_dx, scroll_dy = 0, 0
 
                         elif event.type == self.evdev.ecodes.EV_REL:
@@ -151,58 +139,45 @@ class EvdevCapture(InputCapture):
                             # Hotkey check
                             if self.hotkey_callback:
                                 all_mod_groups_pressed = all(
-                                    any(mod in self._pressed_keys for mod in group)
-                                    for group in self.hotkey_mod_groups
+                                    any(mod in self._pressed_keys for mod in group) for group in self.hotkey_mod_groups
                                 )
-                                keys_pressed = self.hotkey_keys.issubset(
-                                    self._pressed_keys
-                                )
+                                keys_pressed = self.hotkey_keys.issubset(self._pressed_keys)
 
                                 if all_mod_groups_pressed and keys_pressed:
                                     if not self._hotkey_triggered:
-                                        self.hotkey_callback(
-                                            "switch_loop_between_screens"
-                                        )
+                                        self.hotkey_callback('switch_loop_between_screens')
                                         self._hotkey_triggered = True
                                 else:
                                     self._hotkey_triggered = False
 
                             key_event = self.evdev.categorize(event)
-                            is_pressed = (
-                                    event.value == 1
-                            )  # 1 for press, 0 for release, 2 for repeat
+                            is_pressed = event.value == 1  # 1 for press, 0 for release, 2 for repeat
 
                             # Distinguish between mouse buttons and keyboard keys
                             keycodes = key_event.keycode
                             if isinstance(keycodes, str):
                                 keycodes = (keycodes,)
-                            if any("BTN_" in k for k in keycodes):
+                            if any('BTN_' in k for k in keycodes):
                                 # For evdev mouse buttons, map BTN_LEFT to 1, BTN_RIGHT to 2, BTN_MIDDLE to 3 (matching pynput)
-                                self.on_mouse_click(
-                                    self._x, self._y, key_event.scancode, is_pressed
-                                )
+                                self.on_mouse_click(self._x, self._y, key_event.scancode, is_pressed)
                             else:
-                                self.on_key_event(
-                                    key_event.scancode, is_pressed
-                                )  # Use scancode for evdev keys
+                                self.on_key_event(key_event.scancode, is_pressed)  # Use scancode for evdev keys
 
             except Exception as e:
-                self.logger.error(f"EvdevCapture: Error in monitoring loop: {e}")
+                self.logger.error(f'EvdevCapture: Error in monitoring loop: {e}')
                 break
 
-        self.logger.info("EvdevCapture: Monitoring thread stopped.")
+        self.logger.info('EvdevCapture: Monitoring thread stopped.')
 
     def start_monitoring(self):
-        self.logger.info("EvdevCapture: Starting monitoring...")
-        self.logger.warning(
-            "NOTE: evdev requires running as root or user in the 'input' group."
-        )
+        self.logger.info('EvdevCapture: Starting monitoring...')
+        self.logger.warning("NOTE: evdev requires running as root or user in the 'input' group.")
 
         # Discover devices in the main thread before starting the monitor thread
         try:
             self._discover_devices()
         except Exception as e:
-            self.logger.error(f"EvdevCapture: Failed to discover devices: {e}")
+            self.logger.error(f'EvdevCapture: Failed to discover devices: {e}')
             return
 
         if not self._devices:
@@ -213,7 +188,7 @@ class EvdevCapture(InputCapture):
         self._thread.start()
 
     def stop_monitoring(self):
-        self.logger.info("EvdevCapture: Stopping monitoring...")
+        self.logger.info('EvdevCapture: Stopping monitoring...')
         self._stop_event.set()
         if self._thread:
             self._thread.join()
@@ -223,9 +198,7 @@ class EvdevCapture(InputCapture):
             try:
                 device.close()
             except Exception as e:
-                self.logger.error(
-                    f"EvdevCapture: Error while closing device {device.path}: {e}"
-                )
+                self.logger.error(f'EvdevCapture: Error while closing device {device.path}: {e}')
         self._devices = []
 
     def on_mouse_click(self, x: int, y: int, button: int, pressed: bool):
@@ -234,7 +207,7 @@ class EvdevCapture(InputCapture):
             button_value = ecode_to_hid(button)
         else:  # Fallback for unexpected types
             button_value = 0  # Indicate unknown button
-            self.logger.warning(f"Unknown mouse button type for capture: {button}")
+            self.logger.warning(f'Unknown mouse button type for capture: {button}')
 
         event_data = MouseClickEvent(
             button=button_value,
@@ -242,11 +215,9 @@ class EvdevCapture(InputCapture):
             normalized_x=normalized_x,
             normalized_y=normalized_y,
         )
-        self.event_callback(
-            InputEvent(event_type=EventType.MOUSE_CLICK, data=event_data)
-        )
+        self.event_callback(InputEvent(event_type=EventType.MOUSE_CLICK, data=event_data))
         self.logger.debug(
-            f"Mouse {'pressed' if pressed else 'released'} button {hid_to_name(button_value)}:{button_value} at ({x}, {y})"
+            f'Mouse {"pressed" if pressed else "released"} button {hid_to_name(button_value)}:{button_value} at ({x}, {y})'
         )
 
     def on_key_event(self, key: int, pressed: bool):
@@ -257,6 +228,4 @@ class EvdevCapture(InputCapture):
 
         event_data = KeyboardEvent(key_code=key_value, pressed=pressed)
         self.event_callback(InputEvent(event_type=EventType.KEYBOARD, data=event_data))
-        self.logger.debug(
-            f"Key {hid_to_name(key_value)}:{key_value} {'pressed' if pressed else 'released'}"
-        )
+        self.logger.debug(f'Key {hid_to_name(key_value)}:{key_value} {"pressed" if pressed else "released"}')

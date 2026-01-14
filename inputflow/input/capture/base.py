@@ -34,8 +34,7 @@ class InputCapture(abc.ABC):
         self.hotkey_callback = hotkey_callback
         self._move_throttle_sec = (
             config.capture.move_throttle_ms / 1000.0
-            if hasattr(config, "capture")
-            and hasattr(config.capture, "move_throttle_ms")
+            if hasattr(config, 'capture') and hasattr(config.capture, 'move_throttle_ms')
             else move_throttle_ms / 1000.0
         )
         self._last_move_time = 0
@@ -75,23 +74,17 @@ class InputCapture(abc.ABC):
         self._last_x, self._last_y = x, y
 
         normalized_x, normalized_y = self.coord_transformer.normalize(x, y)
-        event_data = MouseMoveEvent(
-            normalized_x=normalized_x, normalized_y=normalized_y, dx=dx, dy=dy
-        )
-        self.event_callback(
-            InputEvent(event_type=EventType.MOUSE_MOVE, data=event_data)
-        )
+        event_data = MouseMoveEvent(normalized_x=normalized_x, normalized_y=normalized_y, dx=dx, dy=dy)
+        self.event_callback(InputEvent(event_type=EventType.MOUSE_MOVE, data=event_data))
         if log:
             self.logger.debug(
-                f"Mouse moved to ({x}, {y}) -> Normalized ({normalized_x}, {normalized_y}), Relative ({dx}, {dy})"
+                f'Mouse moved to ({x}, {y}) -> Normalized ({normalized_x}, {normalized_y}), Relative ({dx}, {dy})'
             )
 
     def on_mouse_scroll(self, x: int, y: int, dx: int, dy: int, log: bool = False):
         # Coordinates are usually ignored for scroll events but included for consistency
         normalized_x, normalized_y = self.coord_transformer.normalize(x, y)
         event_data = MouseScrollEvent(delta_x=dx, delta_y=dy)
-        self.event_callback(
-            InputEvent(event_type=EventType.MOUSE_SCROLL, data=event_data)
-        )
+        self.event_callback(InputEvent(event_type=EventType.MOUSE_SCROLL, data=event_data))
         if log:
-            self.logger.debug(f"Mouse scrolled at ({x}, {y}) with delta ({dx}, {dy})")
+            self.logger.debug(f'Mouse scrolled at ({x}, {y}) with delta ({dx}, {dy})')

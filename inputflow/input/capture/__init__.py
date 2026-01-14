@@ -21,7 +21,7 @@ def get_input_capture(
     Factory function to get the appropriate input capture implementation
     for the current platform.
     """
-    if platform.system() == "Windows" or platform.system() == "Darwin":
+    if platform.system() == 'Windows' or platform.system() == 'Darwin':
         return PynputCapture(
             logger=logger,
             config=config,
@@ -29,7 +29,7 @@ def get_input_capture(
             hotkey_callback=hotkey_callback,
             **kwargs,
         )
-    elif platform.system() == "Linux":
+    elif platform.system() == 'Linux':
         # evdev is a better choice for linux, especially for Wayland.
         # but pynput also has a linux implementation that can be a fallback.
         try:
@@ -41,7 +41,7 @@ def get_input_capture(
                 **kwargs,
             )
         except ImportError:
-            logger.warning("evdev library not found, falling back to pynput on Linux.")
+            logger.warning('evdev library not found, falling back to pynput on Linux.')
             return PynputCapture(
                 logger=logger,
                 config=config,
@@ -50,8 +50,8 @@ def get_input_capture(
                 **kwargs,
             )
         except Exception as e:
-            logger.error(f"Failed to initialize EvdevCapture: {e}")
-            logger.warning("Falling back to pynput on Linux.")
+            logger.error(f'Failed to initialize EvdevCapture: {e}')
+            logger.warning('Falling back to pynput on Linux.')
             return PynputCapture(
                 logger=logger,
                 config=config,
@@ -60,4 +60,4 @@ def get_input_capture(
                 **kwargs,
             )
     else:
-        raise NotImplementedError(f"Platform {platform} is not supported.")
+        raise NotImplementedError(f'Platform {platform} is not supported.')

@@ -4,11 +4,7 @@ from .vk_map import hid_to_vk
 
 
 class HID:
-    def __init__(
-        self,
-        name: str | None = None,
-        code: int | None = None
-    ):
+    def __init__(self, name: str | None = None, code: int | None = None):
 
         if name is not None and code is None:
             code = name_to_hid(name)
