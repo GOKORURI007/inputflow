@@ -32,3 +32,7 @@ docstring-code-format = true
 quote-style = "single"
 indent-style = "space"
 line-ending = "lf"
+
+[tool.ruff.lint]
+preview = true
+select = ["E4", "E7", "E9", "F", "I"]

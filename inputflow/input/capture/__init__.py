@@ -3,6 +3,7 @@ from typing import Callable
 
 from inputflow.config.models import Config
 from inputflow.core.events import InputEvent
+
 from .base import InputCapture
 from .linux import EvdevCapture
 from .windows import PynputCapture
