@@ -22,7 +22,8 @@ dev = [
 [tool.ruff]
 preview = true
 fix-only = true
-unsafe-fixes = true
+show-fixes = true
+output-format = "grouped"
 line-length = 120
 src = [".", "inputflow", "tests"]
 

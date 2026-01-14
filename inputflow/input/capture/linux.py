@@ -1,11 +1,11 @@
+import select
 from threading import Event, Thread
 from typing import Callable
 
-import select
-
 from inputflow.core.events import EventType, InputEvent, KeyboardEvent, MouseClickEvent
-from .base import InputCapture
+
 from ...keymaps import ecode_to_hid, hid_to_ecode, hid_to_name, name_to_hid
+from .base import InputCapture
 
 
 class EvdevCapture(InputCapture):
