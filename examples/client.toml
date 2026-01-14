@@ -1,13 +1,20 @@
 [network]
+# Role of this instance: "server" or "client"
 role = "client"
-bind_ip = "192.168.123.154"
-port = 9999
-tcp_nodelay = true
+server_ip = "192.168.123.154"
+port = 50007
 
 [[topology]]
-self_ip = "192.168.123.15"
-left = "192.168.123.154"
+self_ip = "192.168.123.15" # IP of this machine for topology
+left = "192.168.123.154"   # IP of the machine to the left
+right = ""             # null if no machine to the right
+up = ""
+down = ""
 
 [shortcuts]
-switch_lock = "ctrl+t"
-switch_loop_between_screens = "ctrl+grave"
+switch_lock = "KEY_LEFTCTRL+KEY_LEFTALT+KEY_K"
+switch_loop_between_screens = "KEY_LEFTCTRL+KEY_LEFTALT+KEY_H"
+
+[capture]
+# Mouse move events throttling in milliseconds
+move_throttle_ms = 16

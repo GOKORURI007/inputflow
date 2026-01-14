@@ -7,7 +7,7 @@ import time
 
 from inputflow.config.manager import ConfigManager
 from inputflow.core.logging import get_logger
-from inputflow.input.simulation.base import get_input_simulation
+from inputflow.input.simulation import get_input_simulation
 from inputflow.network.client import NetworkClient
 
 

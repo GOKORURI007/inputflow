@@ -11,18 +11,16 @@ from inputflow.input.capture import get_input_capture
 from inputflow.network.server import NetworkServer
 
 
-def main(ip="0.0.0.0"):
+def main():
     logger = get_logger("server_example")
     config_manager = ConfigManager()
-    config = config_manager.load_config("config.example.toml")
-    config.network.bind_ip = ip
+    config = config_manager.load_config("server.toml")
     server = NetworkServer(logger=logger)
-    server.configure_screens(config.topology)
 
     # Event handler for captured input
     def event_handler(event: InputEvent):
-        if server.active_screen != "server":
-            server.send_event(event, topic=server.active_screen)
+        if server.active_client:
+            server.send_event(event, client_identity=server.active_client)
 
     # Hotkey handler
     def hotkey_handler(hotkey_name: str):
@@ -32,6 +30,7 @@ def main(ip="0.0.0.0"):
 
     try:
         server.bind(config.network.bind_ip, config.network.port)
+        server.start()
 
         input_capture = get_input_capture(
             logger=logger,

@@ -18,3 +18,17 @@ dev = [
     "pytest>=9.0.2",
     "ruff>=0.14.11",
 ]
+
+[tool.ruff]
+preview = true
+fix-only = true
+unsafe-fixes = true
+line-length = 120
+src = [".", "inputflow", "tests"]
+
+[tool.ruff.format]
+preview = true
+docstring-code-format = true
+quote-style = "single"
+indent-style = "space"
+line-ending = "lf"
